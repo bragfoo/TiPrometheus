@@ -39,7 +39,7 @@ func RemoteReader(querys prompb.ReadRequest) *prompb.ReadResponse {
 func getTimeEndpoint(startTime, endTime int64) []int64 {
 	startTimeCompute := (math.Floor(float64(startTime) / 300000)) * 300000
 	endTimeCompute := (math.Floor(float64(endTime) / 300000)) * 300000
-	//log.Println("Time compute:", int64(startTimeCompute),int64(endTimeCompute))
+	log.Println("Time compute:", int64(startTimeCompute), int64(endTimeCompute))
 
 	var tiemEndpointList []int64
 	tiemEndpointList = append(tiemEndpointList, int64(startTimeCompute))
@@ -52,7 +52,7 @@ func getTimeEndpoint(startTime, endTime int64) []int64 {
 		}
 	}
 
-	//log.Println("Time endpoint:", tiemEndpointList)
+	log.Println("Time endpoint:", tiemEndpointList)
 	return tiemEndpointList
 }
 
@@ -66,8 +66,9 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 		//get label index list
 		//key type index:label:newLabel
 		newLabelValue, _ := tikv.Get([]byte(newLabel))
+		log.Println("mdList string:", newLabelValue.Value)
 		mdList := strings.Split(newLabelValue.Value, ",")
-		//log.Println("mdList:",mdList)
+		log.Println("mdList:", mdList)
 
 		//mark count
 		for _, oneMD := range mdList {
@@ -76,7 +77,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 			countMap[oneMD] = newCount
 		}
 	}
-
+	log.Println("countMap", countMap)
 	//get same md
 	for md, count := range countMap {
 		//in the same doc
@@ -86,7 +87,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 			//get labels info
 			labelInfoKey := fmt.Sprintf("doc:%v", md)
 			labelInfoKV, _ := tikv.Get([]byte(labelInfoKey))
-			//log.Println("One timeseries labelInfo", labelInfoKV)
+			log.Println("One timeseries labelInfo", labelInfoKV)
 
 			//get labels
 			labels := makeLabels([]byte(labelInfoKV.Value))
@@ -99,7 +100,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 				//key type timeseries:doc:5d4decf2a1d0dd0151cd893cfc752af4:1543639730686
 				key := fmt.Sprintf("timeseries:doc:%v:%v", md, oneTimeseries)
 				oneTimeseriesValue, _ := tikv.Get([]byte(key))
-				//log.Println("One timeseries value:", oneTimeseriesValue)
+				log.Println("One timeseries value:", oneTimeseriesValue)
 
 				//make value
 				oneTimeseriesValueFloat, _ := strconv.ParseFloat(oneTimeseriesValue.Value, 64)
