@@ -107,7 +107,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 				oneTimeseriesInt, _ := strconv.ParseInt(oneTimeseries, 10, 64)
 				baseValue := prompb.Sample{
 					Value:     oneTimeseriesValueFloat + 10,
-					Timestamp: oneTimeseriesInt,
+					Timestamp: oneTimeseriesInt+1,
 				}
 				values = append(values, &baseValue)
 			}
