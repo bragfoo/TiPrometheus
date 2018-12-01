@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"strconv"
-	
+
 	"../prompb"
 	"../tikv"
 	"bytes"
@@ -18,12 +18,14 @@ var metaLabelMap sync.Map
 
 var indexLabelMap sync.Map
 
+var oriMsgMap sync.Map
+
 func RemoteWriter(data prompb.WriteRequest) {
 	for _, oneDoc := range data.Timeseries {
 		labels := oneDoc.Labels
 		samples := oneDoc.Samples
 		log.Println(labels, samples)
-		
+
 		//build index and return labelMD
 		labelMD := buildIndex(labels, samples)
 		log.Println("LabelMD:", labelMD)
@@ -31,6 +33,7 @@ func RemoteWriter(data prompb.WriteRequest) {
 		// write
 		writeTimeseriesData(labelMD, samples)
 		log.Println(metaLabelMap)
+		SaveOriDoc(labelMD, []byte(data.String()))
 	}
 }
 
@@ -41,7 +44,6 @@ func MakeNewMD(initByte []byte) string {
 	mdString := hex.EncodeToString(md)
 	return mdString
 }
-
 
 // build md5 data and store to kv if not exist
 func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
@@ -56,52 +58,43 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	labelBytes := buffer.Bytes()
 	labelMD := MakeNewMD(labelBytes)
 
-	//var sampleBuffer = bytes.NewBufferString("")
-	//for _, v := range samples {
-	//	sampleBuffer.WriteString(strconv.FormatFloat(v.Value, 'E', -1, 64))
-	//	sampleBuffer.WriteString("#")
-	//	sampleBuffer.WriteString(string(v.Timestamp))
-	//}
-	//sampleMD := MakeNewMD(sampleBuffer.Bytes())
-
 	for _, v := range labels {
 		//key type index:label:__name__#latency
 		buffer := bytes.NewBufferString("index:label:")
 		buffer.WriteString(v.Name)
 		buffer.WriteString("#")
 		buffer.WriteString(v.Value)
-		//value
-		//vBuffer := bytes.NewBufferString(labelMD)
-		//vBuffer.WriteString(",")
-		//vBuffer.WriteString(fmt.Sprintf("%s", sampleMD))
 
 		key := buffer.String()
-		//value := vBuffer.String()
 
-		//finalKey := bytes.NewBufferString(key)
-		//finalKey.WriteString(":")
-		//finalKey.WriteString(value)
-		//keyBytes := finalKey.Bytes()
-
-		if actual, loaded := indexLabelMap.LoadOrStore(key, labelMD); loaded {
+		if actual, loaded := metaLabelMap.LoadOrStore(key, labelMD); loaded {
 			//insert value into old map value
 			b := bytes.NewBufferString(actual.(string))
 			b.WriteString(",")
 			b.WriteString(labelMD)
 			v := b.Bytes()
-			indexLabelMap.Store(key, string(v))
+			metaLabelMap.Store(key, string(v))
 			tikv.Puts([]byte(key), v)
 		} else {
 			//重启 如果map里没有 需要直接写tikv
-			// todo
+			//载入tikv中已有的信息
+			if kv, err := tikv.Get([]byte(key)); "" != kv.Value && nil == err {
+				b := bytes.NewBufferString(kv.Key)
+				b.WriteString(",")
+				b.WriteString(labelMD)
+				v := b.Bytes()
+				metaLabelMap.Store(key, string(v))
+				tikv.Puts([]byte(key), v)
+			}
+
 			tikv.Puts([]byte(key), []byte(labelMD))
 		}
 
-		// debug info
-		//indexLabelMap.Range(func(key, value interface{}) bool {
-		//	log.Printf("[indexLabelMap]:[key]:%s [value]%s \n", key, value)
-		//	return true
-		//})
+		//debug info
+		metaLabelMap.Range(func(key, value interface{}) bool {
+			log.Printf("[indexLabelMap]:[key]:%s [value]%s \n", key, value)
+			return true
+		})
 
 	}
 
@@ -114,11 +107,20 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	tBuffer.WriteString(":")
 	tBuffer.WriteString(strconv.FormatInt(now, 10))
 	timeIndexBytes := tBuffer.Bytes()
-			//重启 如果map里没有 需要直接写tikv
-			// todo
+	//重启 如果map里没有 需要直接写tikv
 	for _, v := range samples {
 		if _, ok := indexLabelMap.LoadOrStore(string(timeIndexBytes), v.Timestamp); !ok {
 			tikv.Puts(timeIndexBytes, int64ToBytes(v.Timestamp))
+		} else {
+			//载入tikv中已有的信息
+			if kv, err := tikv.Get([]byte(timeIndexBytes)); "" != kv.Value && nil == err {
+				b := bytes.NewBufferString(kv.Key)
+				b.WriteString(",")
+				b.WriteString(labelMD)
+				v := b.Bytes()
+				indexLabelMap.Store(timeIndexBytes, string(v))
+				tikv.Puts([]byte(timeIndexBytes), v)
+			}
 		}
 	}
 
@@ -135,11 +137,41 @@ func writeTimeseriesData(labelMD string, samples []*prompb.Sample) {
 		key := buffer.Bytes()
 		// set cache map
 
-		if _, ok := metaLabelMap.LoadOrStore(string(key), v.Value); !ok {
-			//write to tikv
-			tikv.Puts(key, []byte(strconv.FormatFloat(v.Value, 'E', -1, 64)))
+		//if _, ok := metaLabelMap.LoadOrStore(string(key), v.Value); !ok {
+		//	//write to tikv
+		tikv.Puts(key, []byte(strconv.FormatFloat(v.Value, 'E', -1, 64)))
+		//} else {
+		//	//载入tikv中已有的信息
+		//	if kv, err := tikv.Get([]byte(key)); "" != kv.Value && nil == err {
+		//		b := bytes.NewBufferString(kv.Key)
+		//		b.WriteString(",")
+		//		b.WriteString(labelMD)
+		//		v := b.Bytes()
+		//		metaLabelMap.Store(key, string(v))
+		//		tikv.Puts([]byte(key), v)
+		//	}
+		//}
+	}
+}
+
+func SaveOriDoc(labelMD string, originalMsg []byte) {
+	buffer := bytes.NewBufferString("doc:")
+	buffer.WriteString(labelMD)
+	key := buffer.Bytes()
+	if _, ok := oriMsgMap.LoadOrStore(string(key), originalMsg); !ok {
+		tikv.Puts(key, originalMsg)
+	} else {
+		//载入tikv中已有的信息
+		if kv, err := tikv.Get([]byte(key)); "" != kv.Value && nil == err {
+			b := bytes.NewBufferString(kv.Key)
+			b.WriteString(",")
+			b.WriteString(labelMD)
+			v := b.Bytes()
+			oriMsgMap.Store(key, string(v))
+			tikv.Puts([]byte(key), v)
 		}
 	}
+
 }
 
 func int64ToBytes(i int64) []byte {
