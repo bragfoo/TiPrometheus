@@ -5,11 +5,10 @@ import (
 	"encoding/hex"
 	"github.com/bragfoo/TiPrometheus/src/lib"
 	"strconv"
-
+	
 	"../prompb"
 	"../tikv"
 	"bytes"
-	"log"
 	"sync"
 	"time"
 )
@@ -70,15 +69,15 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 		//log.Println("Write label md:", key, labelMD)
 
 		indexStatus := "index:status:" + v.Name + "#" + v.Value + "+" + labelMD
-		indexStatusKey, gErr := tikv.Get([]byte(indexStatus))
-		log.Println("indexStatus:", indexStatusKey, gErr)
+		indexStatusKey, _ := tikv.Get([]byte(indexStatus))
+		//log.Println("indexStatus:", indexStatusKey)
 
 		if "" == indexStatusKey.Value {
 			tikv.Puts([]byte(indexStatus), []byte("1"))
 
 			//wtire tikv
-			oldKey, err := tikv.Get([]byte(key))
-			log.Println("oldKey", oldKey, err)
+			oldKey, _ := tikv.Get([]byte(key))
+			//log.Println("oldKey", oldKey)
 
 			if oldKey.Value == "" {
 				//fitrst
@@ -94,8 +93,8 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 			}
 		} else {
 
-			indexStatusKey, gErr := tikv.Get([]byte(indexStatus))
-			log.Println("indexStatus:", indexStatusKey, gErr)
+			//indexStatusKey, _ := tikv.Get([]byte(indexStatus))
+			//log.Println("indexStatus:", indexStatusKey)
 
 		}
 	}
@@ -112,35 +111,17 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 
 	//重启 如果map里没有 需要直接写tikv
 	for _, v := range samples {
-
-		indexStatus := "index:status:" + strconv.FormatInt(v.Timestamp, 10) + "#" + strconv.FormatFloat(v.Value, 'E', -1, 64) + "+" + labelMD
-		indexStatusKey, gErr := tikv.Get([]byte(indexStatus))
-		log.Println("indexStatus:", indexStatusKey, gErr)
-
-		if "" == indexStatusKey.Value {
-			tikv.Puts([]byte(indexStatus), []byte("1"))
-
-			//wtire tikv
-			oldKey, err := tikv.Get(timeIndexBytes)
-			log.Println("oldKey", oldKey, err)
-
-			if oldKey.Value == "" {
-				//fitrst
-				tikv.Puts(timeIndexBytes, int64ToBytes(v.Timestamp))
-			} else {
-
-				b := bytes.NewBufferString(oldKey.Value)
-				b.WriteString(",")
-				b.Write(int64ToBytes(v.Timestamp))
-				v := b.Bytes()
-				metaLabelMap.Store(timeIndexBytes, string(v))
-				tikv.Puts(timeIndexBytes, v)
-			}
+		oldKey, _ := tikv.Get(timeIndexBytes)
+		//log.Println("oldKey", oldKey)
+		if oldKey.Value == "" {
+			//fitrst
+			tikv.Puts(timeIndexBytes, int64ToBytes(v.Timestamp))
 		} else {
-
-			indexStatusKey, gErr := tikv.Get([]byte(indexStatus))
-			log.Println("indexStatus:", indexStatusKey, gErr)
-
+			b := bytes.NewBufferString(oldKey.Value)
+			b.WriteString(",")
+			b.Write(int64ToBytes(v.Timestamp))
+			v := b.Bytes()
+			tikv.Puts(timeIndexBytes, v)
 		}
 	}
 

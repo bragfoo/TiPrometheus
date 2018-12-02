@@ -16,7 +16,7 @@ var Client *tikv.RawKVClient
 // InitStore
 func InitStore() {
 	var err error
-	Client, err = tikv.NewRawKVClient([]string{"47.93.61.57:2379"}, config.Security{})
+	Client, err = tikv.NewRawKVClient([]string{"117.50.61.185:2379"}, config.Security{})
 	if err != nil {
 		log.Println(err)
 	}
