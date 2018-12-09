@@ -1,6 +1,7 @@
 package tikv
 
 import (
+	"github.com/bragfoo/TiPrometheus/src/modules/conf"
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/store/tikv"
 	"log"
@@ -16,7 +17,7 @@ var Client *tikv.RawKVClient
 // InitStore
 func InitStore() {
 	var err error
-	Client, err = tikv.NewRawKVClient([]string{"117.50.61.185:2379"}, config.Security{})
+	Client, err = tikv.NewRawKVClient([]string{conf.RunTimeInfo.PDHost}, config.Security{})
 	if err != nil {
 		log.Println(err)
 	}

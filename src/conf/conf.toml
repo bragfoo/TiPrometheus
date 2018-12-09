@@ -1,7 +1,5 @@
 [dev]
-    PDHost = "117.50.61.185:2379"
-
+    PDHost = "ip:port"
 
 [pro]
-    PDHost = "117.50.61.185:2379"
-
+    PDHost = "ip:port"
