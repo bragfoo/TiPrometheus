@@ -1,6 +1,6 @@
 # TiPrometheus
 
-A adapter/gateway for [TiVK](https://github.com/tikv/tikv).
+A adapter/gateway for [TiKV](https://github.com/tikv/tikv).
 
 Support remote write and read.
 
