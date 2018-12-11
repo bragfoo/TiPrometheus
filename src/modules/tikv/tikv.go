@@ -25,7 +25,6 @@ func Init() {
 
 // Puts
 func Puts(args ...[]byte) error {
-	//log.Printf("%v",args)
 	for i := 0; i < len(args); i += 2 {
 		key, val := args[i], args[i+1]
 		err := Client.Put(key, val)
