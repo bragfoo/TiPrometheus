@@ -1,5 +1,7 @@
 [dev]
     PDHost = "47.93.61.57:2379"
+    TimeInterval = 5
 
 [pro]
     PDHost = "ip:port"
+    TimeInterval = 5

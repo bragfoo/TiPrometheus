@@ -1,13 +1,15 @@
 package adapter
 
 import (
-	"bytes"
 	"github.com/bragfoo/TiPrometheus/src/lib"
-	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
-	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
-	buffer "go.uber.org/zap/buffer"
+	"github.com/bragfoo/TiPrometheus/src/modules/conf"
 	"log"
 	"strconv"
+
+	"../prompb"
+	"../tikv"
+	"bytes"
+	"go.uber.org/zap/buffer"
 	"time"
 )
 
@@ -96,7 +98,10 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	buf.AppendString("index:timeseries:")
 
 	now := time.Now().UnixNano() / int64(time.Millisecond)
-	now = (now / 300000) * 300000
+	//now = (now / 300000) * 300000
+
+	interval := int64(conf.RunTimeInfo.TimeInterval * 1000 * 60)
+	now = (now / interval) * interval
 
 	buf.AppendString(labelID)
 	buf.AppendString(":")

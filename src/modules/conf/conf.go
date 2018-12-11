@@ -2,7 +2,8 @@ package conf
 
 // AgentConf is agent conf
 type AgentConf struct {
-	PDHost string
+	PDHost       string
+	TimeInterval int
 }
 
 // RunTimeInfo is run time info

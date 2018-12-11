@@ -1,14 +1,20 @@
 package adapter
 
 import (
+	"../prompb"
+	"../tikv"
 	"bytes"
 	"encoding/gob"
-	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
-	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
+	"github.com/bragfoo/TiPrometheus/src/modules/conf"
+	"go.uber.org/zap/buffer"
 	"log"
 	"math"
 	"strconv"
 	"strings"
+)
+
+var (
+	pool = buffer.NewPool()
 )
 
 func RemoteReader(querys prompb.ReadRequest) *prompb.ReadResponse {
@@ -36,14 +42,15 @@ func RemoteReader(querys prompb.ReadRequest) *prompb.ReadResponse {
 }
 
 func getTimeEndpoint(startTime, endTime int64) []int64 {
-	startTimeCompute := (math.Floor(float64(startTime) / 300000)) * 300000
-	endTimeCompute := (math.Floor(float64(endTime) / 300000)) * 300000
+	interval := float64(conf.RunTimeInfo.TimeInterval * 1000 * 60)
+	startTimeCompute := (math.Floor(float64(startTime) / interval)) * interval
+	endTimeCompute := (math.Floor(float64(endTime) / interval)) * interval
 	//log.Println("Time compute:", int64(startTimeCompute), int64(endTimeCompute))
 
 	var tiemEndpointList []int64
 	//in one time interval
 	if startTimeCompute == endTimeCompute {
-		endTimeCompute = startTimeCompute + 300000
+		endTimeCompute = startTimeCompute + interval
 	}
 	//in time intervals
 	tiemEndpointList = append(tiemEndpointList, int64(startTimeCompute))
@@ -64,13 +71,18 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 	countMap := make(map[string]int)
 	var docTimeseries []*prompb.TimeSeries
 
+	buffer := pool.Get()
+	defer buffer.Free()
+
 	for _, queryLabel := range matchers {
 		//newLabel
-		buffer := bytes.NewBufferString("index:label:")
-		buffer.WriteString(queryLabel.Name)
-		buffer.WriteString("#")
-		buffer.WriteString(queryLabel.Value)
+		//buffer := bytes.NewBufferString("index:label:")
+		buffer.AppendString("index:label:")
+		buffer.AppendString(queryLabel.Name)
+		buffer.AppendString("#")
+		buffer.AppendString(queryLabel.Value)
 		newLabel := buffer.String()
+		buffer.Reset()
 		//get label index list
 		//key type index:label:newLabel
 		newLabelValue, _ := tikv.Get([]byte(newLabel))
@@ -91,10 +103,13 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 			//log.Println("Find intersection key md:", md)
 
 			//get labels info
-			buffer := bytes.NewBufferString("doc:")
-			buffer.WriteString(md)
+			//buffer := bytes.NewBufferString("doc:")
+			buffer.AppendString("doc:")
+			buffer.AppendString(md)
 			labelInfoKey := buffer.Bytes()
 			labelInfoKV, _ := tikv.Get([]byte(labelInfoKey))
+			buffer.Reset()
+
 			//log.Println("One label info", labelInfoKV)
 
 			//get labels
@@ -106,12 +121,14 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 			timeList := getTimeList(md, tiemEndpointList)
 			for _, oneTimeseries := range timeList {
 				//key type timeseries:doc:5d4decf2a1d0dd0151cd893cfc752af4:1543639730686
-				buffer := bytes.NewBufferString("timeseries:doc:")
-				buffer.WriteString(md)
-				buffer.WriteString(":")
-				buffer.WriteString(oneTimeseries)
+				//buffer := bytes.NewBufferString("timeseries:doc:")
+				buffer.AppendString("timeseries:doc:")
+				buffer.AppendString(md)
+				buffer.AppendString(":")
+				buffer.AppendString(oneTimeseries)
 				key := buffer.Bytes()
 				oneTimeseriesValue, _ := tikv.Get([]byte(key))
+				buffer.Reset()
 				//log.Println("One doc value:", oneTimeseriesValue)
 
 				//make value
@@ -122,6 +139,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 					Timestamp: oneTimeseriesInt,
 				}
 				values = append(values, &baseValue)
+
 			}
 
 			// one timeseries
