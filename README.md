@@ -11,3 +11,8 @@ Run it with the following command：
 ```
 RunTime=dev go run app.go -conf "./conf/conf.toml"
 ```
+
+### Roadmap
+
+- [ ] series churn
+- [ ] doc index hash
