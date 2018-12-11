@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/gob"
 	"encoding/hex"
+	"hash/crc32"
 	"strconv"
 )
 
@@ -17,6 +18,11 @@ func GetBytes(key interface{}) []byte {
 
 func Int64ToBytes(i int64) []byte {
 	return []byte(strconv.FormatInt(i, 10))
+}
+
+func MakeCRCByByte(initByte []byte) string {
+	crc := crc32.ChecksumIEEE(initByte)
+	return strconv.FormatUint(uint64(crc), 10)
 }
 
 func MakeMDByByte(initByte []byte) string {

@@ -40,7 +40,7 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 		buffer.WriteString(v.Value)
 	}
 	labelBytes := buffer.Bytes()
-	labelMD := lib.MakeMDByByte(labelBytes)
+	labelMD := lib.MakeCRCByByte(labelBytes)
 
 	//labels index
 	for _, v := range labels {
