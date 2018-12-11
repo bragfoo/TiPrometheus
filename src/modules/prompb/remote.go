@@ -27,15 +27,18 @@
 */
 package prompb
 
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
-
-import io "io"
+import (
+	fmt "fmt"
+	proto "github.com/gogo/protobuf/proto"
+	io "io"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+
 var _ = fmt.Errorf
+
 var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
@@ -48,10 +51,19 @@ type WriteRequest struct {
 	Timeseries []*TimeSeries `protobuf:"bytes,1,rep,name=timeseries" json:"timeseries,omitempty"`
 }
 
-func (m *WriteRequest) Reset()                    { *m = WriteRequest{} }
-func (m *WriteRequest) String() string            { return proto.CompactTextString(m) }
-func (*WriteRequest) ProtoMessage()               {}
-func (*WriteRequest) Descriptor() ([]byte, []int) { return fileDescriptorRemote, []int{0} }
+func (m *WriteRequest) Reset() {
+	*m = WriteRequest{}
+}
+
+func (m *WriteRequest) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*WriteRequest) ProtoMessage() {}
+
+func (*WriteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptorRemote, []int{0}
+}
 
 func (m *WriteRequest) GetTimeseries() []*TimeSeries {
 	if m != nil {
@@ -64,10 +76,19 @@ type ReadRequest struct {
 	Queries []*Query `protobuf:"bytes,1,rep,name=queries" json:"queries,omitempty"`
 }
 
-func (m *ReadRequest) Reset()                    { *m = ReadRequest{} }
-func (m *ReadRequest) String() string            { return proto.CompactTextString(m) }
-func (*ReadRequest) ProtoMessage()               {}
-func (*ReadRequest) Descriptor() ([]byte, []int) { return fileDescriptorRemote, []int{1} }
+func (m *ReadRequest) Reset() {
+	*m = ReadRequest{}
+}
+
+func (m *ReadRequest) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*ReadRequest) ProtoMessage() {}
+
+func (*ReadRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptorRemote, []int{1}
+}
 
 func (m *ReadRequest) GetQueries() []*Query {
 	if m != nil {
@@ -81,10 +102,19 @@ type ReadResponse struct {
 	Results []*QueryResult `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
 }
 
-func (m *ReadResponse) Reset()                    { *m = ReadResponse{} }
-func (m *ReadResponse) String() string            { return proto.CompactTextString(m) }
-func (*ReadResponse) ProtoMessage()               {}
-func (*ReadResponse) Descriptor() ([]byte, []int) { return fileDescriptorRemote, []int{2} }
+func (m *ReadResponse) Reset() {
+	*m = ReadResponse{}
+}
+
+func (m *ReadResponse) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*ReadResponse) ProtoMessage() {}
+
+func (*ReadResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptorRemote, []int{2}
+}
 
 func (m *ReadResponse) GetResults() []*QueryResult {
 	if m != nil {
@@ -99,10 +129,19 @@ type Query struct {
 	Matchers         []*LabelMatcher `protobuf:"bytes,3,rep,name=matchers" json:"matchers,omitempty"`
 }
 
-func (m *Query) Reset()                    { *m = Query{} }
-func (m *Query) String() string            { return proto.CompactTextString(m) }
-func (*Query) ProtoMessage()               {}
-func (*Query) Descriptor() ([]byte, []int) { return fileDescriptorRemote, []int{3} }
+func (m *Query) Reset() {
+	*m = Query{}
+}
+
+func (m *Query) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*Query) ProtoMessage() {}
+
+func (*Query) Descriptor() ([]byte, []int) {
+	return fileDescriptorRemote, []int{3}
+}
 
 func (m *Query) GetStartTimestampMs() int64 {
 	if m != nil {
@@ -129,10 +168,19 @@ type QueryResult struct {
 	Timeseries []*TimeSeries `protobuf:"bytes,1,rep,name=timeseries" json:"timeseries,omitempty"`
 }
 
-func (m *QueryResult) Reset()                    { *m = QueryResult{} }
-func (m *QueryResult) String() string            { return proto.CompactTextString(m) }
-func (*QueryResult) ProtoMessage()               {}
-func (*QueryResult) Descriptor() ([]byte, []int) { return fileDescriptorRemote, []int{4} }
+func (m *QueryResult) Reset() {
+	*m = QueryResult{}
+}
+
+func (m *QueryResult) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*QueryResult) ProtoMessage() {}
+
+func (*QueryResult) Descriptor() ([]byte, []int) {
+	return fileDescriptorRemote, []int{4}
+}
 
 func (m *QueryResult) GetTimeseries() []*TimeSeries {
 	if m != nil {
@@ -148,6 +196,7 @@ func init() {
 	proto.RegisterType((*Query)(nil), "prometheus.Query")
 	proto.RegisterType((*QueryResult)(nil), "prometheus.QueryResult")
 }
+
 func (m *WriteRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -317,6 +366,7 @@ func encodeVarintRemote(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return offset + 1
 }
+
 func (m *WriteRequest) Size() (n int) {
 	var l int
 	_ = l
@@ -393,9 +443,11 @@ func sovRemote(x uint64) (n int) {
 	}
 	return n
 }
+
 func sozRemote(x uint64) (n int) {
 	return sovRemote(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+
 func (m *WriteRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -477,6 +529,7 @@ func (m *WriteRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *ReadRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -558,6 +611,7 @@ func (m *ReadRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *ReadResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -639,6 +693,7 @@ func (m *ReadResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *Query) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -758,6 +813,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *QueryResult) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -839,6 +895,7 @@ func (m *QueryResult) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skipRemote(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
@@ -944,7 +1001,9 @@ var (
 	ErrIntOverflowRemote   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("remote.proto", fileDescriptorRemote) }
+func init() {
+	proto.RegisterFile("remote.proto", fileDescriptorRemote)
+}
 
 var fileDescriptorRemote = []byte{
 	// 284 bytes of a gzipped FileDescriptorProto

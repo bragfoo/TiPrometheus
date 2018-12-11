@@ -15,7 +15,7 @@ type kv struct {
 var Client *tikv.RawKVClient
 
 // InitStore
-func InitStore() {
+func Init() {
 	var err error
 	Client, err = tikv.NewRawKVClient([]string{conf.RunTimeInfo.PDHost}, config.Security{})
 	if err != nil {

@@ -1,13 +1,12 @@
 package adapter
 
 import (
+	"bytes"
 	"github.com/bragfoo/TiPrometheus/src/lib"
+	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
+	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
 	"log"
 	"strconv"
-
-	"../prompb"
-	"../tikv"
-	"bytes"
 	"time"
 )
 
@@ -17,15 +16,15 @@ func RemoteWriter(data prompb.WriteRequest) {
 		samples := oneDoc.Samples
 		log.Println("Naive write data:", labels, samples)
 
-		//build index and return labelMD
-		labelMD := buildIndex(labels, samples)
-		//log.Println("LabelMD:",labelMD)
+		//build index and return labelID
+		labelID := buildIndex(labels, samples)
+		log.Println("LabelID:", labelID)
 
 		//write timeseries data
-		writeTimeseriesData(labelMD, samples)
+		writeTimeseriesData(labelID, samples)
 
 		labelsByte := lib.GetBytes(labels)
-		SaveOriDoc(labelMD, labelsByte)
+		SaveOriDoc(labelID, labelsByte)
 	}
 }
 
@@ -40,7 +39,7 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 		buffer.WriteString(v.Value)
 	}
 	labelBytes := buffer.Bytes()
-	labelMD := lib.MakeCRCByByte(labelBytes)
+	labelID := lib.MakeMDByByte(labelBytes)
 
 	//labels index
 	for _, v := range labels {
@@ -50,10 +49,10 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 		buffer.WriteString("#")
 		buffer.WriteString(v.Value)
 		key := buffer.String()
-		//log.Println("Write label md:", key, labelMD)
+		//log.Println("Write label md:", key, labelID)
 
-		//key type index:status:__name__#latency+labelMD
-		indexStatus := "index:status:" + v.Name + "#" + v.Value + "+" + labelMD
+		//key type index:status:__name__#latency+labelID
+		indexStatus := "index:status:" + v.Name + "#" + v.Value + "+" + labelID
 		indexStatusKey, _ := tikv.Get([]byte(indexStatus))
 		//log.Println("indexStatus:", indexStatusKey)
 
@@ -64,11 +63,11 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 			//wtire tikv
 			oldKey, _ := tikv.Get([]byte(key))
 			if oldKey.Value == "" {
-				tikv.Puts([]byte(key), []byte(labelMD))
+				tikv.Puts([]byte(key), []byte(labelID))
 			} else {
 				b := bytes.NewBufferString(oldKey.Value)
 				b.WriteString(",")
-				b.WriteString(labelMD)
+				b.WriteString(labelID)
 				v := b.Bytes()
 				tikv.Puts([]byte(key), v)
 			}
@@ -79,7 +78,7 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	now := time.Now().UnixNano() / int64(time.Millisecond)
 	now = (now / 300000) * 300000
 
-	tBuffer.WriteString(labelMD)
+	tBuffer.WriteString(labelID)
 	tBuffer.WriteString(":")
 	tBuffer.WriteString(strconv.FormatInt(now, 10))
 	timeIndexBytes := tBuffer.Bytes()
@@ -98,14 +97,14 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 		}
 	}
 
-	return labelMD
+	return labelID
 }
 
-func writeTimeseriesData(labelMD string, samples []*prompb.Sample) {
+func writeTimeseriesData(labelID string, samples []*prompb.Sample) {
 	for _, v := range samples {
-		//key type timeseries:doc:labelMD#timestamp
+		//key type timeseries:doc:labelID#timestamp
 		buffer := bytes.NewBufferString("timeseries:doc:")
-		buffer.WriteString(labelMD)
+		buffer.WriteString(labelID)
 		buffer.WriteString(":")
 		buffer.WriteString(strconv.FormatInt(v.Timestamp, 10))
 		key := buffer.Bytes()
@@ -115,9 +114,9 @@ func writeTimeseriesData(labelMD string, samples []*prompb.Sample) {
 	}
 }
 
-func SaveOriDoc(labelMD string, originalMsg []byte) {
+func SaveOriDoc(labelID string, originalMsg []byte) {
 	buffer := bytes.NewBufferString("doc:")
-	buffer.WriteString(labelMD)
+	buffer.WriteString(labelID)
 	key := buffer.Bytes()
 	tikv.Puts(key, originalMsg)
 	//log.Println("Write meta:", string(key), string(originalMsg))

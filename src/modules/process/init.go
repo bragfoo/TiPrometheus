@@ -1,13 +1,11 @@
 package process
 
 import (
-	"log"
-
-	"../../lib"
-	"../conf"
-	"../tikv"
-
 	"github.com/BurntSushi/toml"
+	"github.com/bragfoo/TiPrometheus/src/lib"
+	"github.com/bragfoo/TiPrometheus/src/modules/conf"
+	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
+	"log"
 )
 
 // Init is init data
@@ -18,9 +16,9 @@ func Init(runTime, confPath string) {
 		return
 	}
 	conf.RunTimeInfo = conf.RunTimeMap[runTime]
-	log.Println(conf.RunTimeMap)
+	log.Println(conf.RunTimeInfo)
 	// init log
 	lib.InitLog()
 	// init tikv
-	tikv.InitStore()
+	tikv.Init()
 }

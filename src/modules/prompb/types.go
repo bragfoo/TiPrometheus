@@ -3,17 +3,19 @@
 
 package prompb
 
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
-
-import encoding_binary "encoding/binary"
-
-import io "io"
+import (
+	encoding_binary "encoding/binary"
+	fmt "fmt"
+	proto "github.com/gogo/protobuf/proto"
+	io "io"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+
 var _ = fmt.Errorf
+
 var _ = math.Inf
 
 type LabelMatcher_Type int32
@@ -41,17 +43,29 @@ var LabelMatcher_Type_value = map[string]int32{
 func (x LabelMatcher_Type) String() string {
 	return proto.EnumName(LabelMatcher_Type_name, int32(x))
 }
-func (LabelMatcher_Type) EnumDescriptor() ([]byte, []int) { return fileDescriptorTypes, []int{4, 0} }
+
+func (LabelMatcher_Type) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptorTypes, []int{4, 0}
+}
 
 type Sample struct {
 	Value     float64 `protobuf:"fixed64,1,opt,name=value,proto3" json:"value,omitempty"`
 	Timestamp int64   `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
-func (m *Sample) Reset()                    { *m = Sample{} }
-func (m *Sample) String() string            { return proto.CompactTextString(m) }
-func (*Sample) ProtoMessage()               {}
-func (*Sample) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{0} }
+func (m *Sample) Reset() {
+	*m = Sample{}
+}
+
+func (m *Sample) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*Sample) ProtoMessage() {}
+
+func (*Sample) Descriptor() ([]byte, []int) {
+	return fileDescriptorTypes, []int{0}
+}
 
 func (m *Sample) GetValue() float64 {
 	if m != nil {
@@ -72,10 +86,19 @@ type TimeSeries struct {
 	Samples []*Sample `protobuf:"bytes,2,rep,name=samples" json:"samples,omitempty"`
 }
 
-func (m *TimeSeries) Reset()                    { *m = TimeSeries{} }
-func (m *TimeSeries) String() string            { return proto.CompactTextString(m) }
-func (*TimeSeries) ProtoMessage()               {}
-func (*TimeSeries) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{1} }
+func (m *TimeSeries) Reset() {
+	*m = TimeSeries{}
+}
+
+func (m *TimeSeries) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*TimeSeries) ProtoMessage() {}
+
+func (*TimeSeries) Descriptor() ([]byte, []int) {
+	return fileDescriptorTypes, []int{1}
+}
 
 func (m *TimeSeries) GetLabels() []*Label {
 	if m != nil {
@@ -96,10 +119,19 @@ type Label struct {
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
-func (m *Label) Reset()                    { *m = Label{} }
-func (m *Label) String() string            { return proto.CompactTextString(m) }
-func (*Label) ProtoMessage()               {}
-func (*Label) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{2} }
+func (m *Label) Reset() {
+	*m = Label{}
+}
+
+func (m *Label) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*Label) ProtoMessage() {}
+
+func (*Label) Descriptor() ([]byte, []int) {
+	return fileDescriptorTypes, []int{2}
+}
 
 func (m *Label) GetName() string {
 	if m != nil {
@@ -119,10 +151,19 @@ type Labels struct {
 	Labels []Label `protobuf:"bytes,1,rep,name=labels" json:"labels"`
 }
 
-func (m *Labels) Reset()                    { *m = Labels{} }
-func (m *Labels) String() string            { return proto.CompactTextString(m) }
-func (*Labels) ProtoMessage()               {}
-func (*Labels) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{3} }
+func (m *Labels) Reset() {
+	*m = Labels{}
+}
+
+func (m *Labels) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*Labels) ProtoMessage() {}
+
+func (*Labels) Descriptor() ([]byte, []int) {
+	return fileDescriptorTypes, []int{3}
+}
 
 func (m *Labels) GetLabels() []Label {
 	if m != nil {
@@ -138,10 +179,19 @@ type LabelMatcher struct {
 	Value string            `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 }
 
-func (m *LabelMatcher) Reset()                    { *m = LabelMatcher{} }
-func (m *LabelMatcher) String() string            { return proto.CompactTextString(m) }
-func (*LabelMatcher) ProtoMessage()               {}
-func (*LabelMatcher) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{4} }
+func (m *LabelMatcher) Reset() {
+	*m = LabelMatcher{}
+}
+
+func (m *LabelMatcher) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*LabelMatcher) ProtoMessage() {}
+
+func (*LabelMatcher) Descriptor() ([]byte, []int) {
+	return fileDescriptorTypes, []int{4}
+}
 
 func (m *LabelMatcher) GetType() LabelMatcher_Type {
 	if m != nil {
@@ -172,6 +222,7 @@ func init() {
 	proto.RegisterType((*LabelMatcher)(nil), "prometheus.LabelMatcher")
 	proto.RegisterEnum("prometheus.LabelMatcher_Type", LabelMatcher_Type_name, LabelMatcher_Type_value)
 }
+
 func (m *Sample) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -430,9 +481,11 @@ func sovTypes(x uint64) (n int) {
 	}
 	return n
 }
+
 func sozTypes(x uint64) (n int) {
 	return sovTypes(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+
 func (m *Sample) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -513,6 +566,7 @@ func (m *Sample) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *TimeSeries) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -625,6 +679,7 @@ func (m *TimeSeries) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *Label) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -733,6 +788,7 @@ func (m *Label) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *Labels) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -814,6 +870,7 @@ func (m *Labels) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *LabelMatcher) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -941,6 +998,7 @@ func (m *LabelMatcher) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skipTypes(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1046,7 +1104,9 @@ var (
 	ErrIntOverflowTypes   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("types.proto", fileDescriptorTypes) }
+func init() {
+	proto.RegisterFile("types.proto", fileDescriptorTypes)
+}
 
 var fileDescriptorTypes = []byte{
 	// 316 bytes of a gzipped FileDescriptorProto

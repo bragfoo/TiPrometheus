@@ -1,10 +1,10 @@
 package adapter
 
 import (
-	"../prompb"
-	"../tikv"
 	"bytes"
 	"encoding/gob"
+	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
+	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
 	"log"
 	"math"
 	"strconv"
@@ -153,7 +153,7 @@ func getTimeList(md string, tiemEndpointList []int64) []string {
 			timeList = append(timeList, strings.Split(timeListTemp, ",")...)
 		}
 	}
-	
+
 	//log.Println("Time list:", timeList)
 	return timeList
 }
