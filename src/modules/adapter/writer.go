@@ -8,7 +8,12 @@ import (
 	"../prompb"
 	"../tikv"
 	"bytes"
+	"go.uber.org/zap/buffer"
 	"time"
+)
+
+var (
+	buffers = buffer.NewPool()
 )
 
 func RemoteWriter(data prompb.WriteRequest) {
@@ -32,28 +37,38 @@ func RemoteWriter(data prompb.WriteRequest) {
 //build md5 data and store to kv if not exist
 func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	//make md
-	var buffer = bytes.NewBufferString("")
 	//key type key#value
+	buf := buffers.Get()
+	defer buf.Free()
 	for _, v := range labels {
-		buffer.WriteString(v.Name)
-		buffer.WriteString("#")
-		buffer.WriteString(v.Value)
+		buf.AppendString(v.Name)
+		buf.AppendString("#")
+		buf.AppendString(v.Value)
 	}
-	labelBytes := buffer.Bytes()
+	labelBytes := buf.Bytes()
 	labelMD := lib.MakeCRCByByte(labelBytes)
+	buf.Reset()
 
 	//labels index
 	for _, v := range labels {
 		//key type index:label:__name__#latency
-		buffer := bytes.NewBufferString("index:label:")
-		buffer.WriteString(v.Name)
-		buffer.WriteString("#")
-		buffer.WriteString(v.Value)
-		key := buffer.String()
+		buf.AppendString("index:label:")
+		buf.AppendString(v.Name)
+		buf.AppendString("#")
+		buf.AppendString(v.Value)
+
+		key := buf.String()
+		buf.Reset()
 		//log.Println("Write label md:", key, labelMD)
 
 		//key type index:status:__name__#latency+labelMD
-		indexStatus := "index:status:" + v.Name + "#" + v.Value + "+" + labelMD
+		buf.AppendString("index:status:")
+		buf.AppendString(v.Name)
+		buf.AppendString("#")
+		buf.AppendString(v.Value)
+		buf.AppendString("+")
+		buf.AppendString(labelMD)
+		indexStatus := buf.Bytes()
 		indexStatusKey, _ := tikv.Get([]byte(indexStatus))
 		//log.Println("indexStatus:", indexStatusKey)
 
@@ -73,16 +88,21 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 				tikv.Puts([]byte(key), v)
 			}
 		}
+
+		buf.Reset()
 	}
 
-	tBuffer := bytes.NewBufferString("index:timeseries:")
+	buf.Reset()
+	buf.AppendString("index:timeseries:")
+
 	now := time.Now().UnixNano() / int64(time.Millisecond)
 	now = (now / 300000) * 300000
 
-	tBuffer.WriteString(labelMD)
-	tBuffer.WriteString(":")
-	tBuffer.WriteString(strconv.FormatInt(now, 10))
-	timeIndexBytes := tBuffer.Bytes()
+	buf.AppendString(labelMD)
+	buf.AppendString(":")
+	buf.AppendString(strconv.FormatInt(now, 10))
+
+	timeIndexBytes := buf.Bytes()
 
 	//samples index
 	for _, v := range samples {
@@ -90,11 +110,13 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 		if oldKey.Value == "" {
 			tikv.Puts(timeIndexBytes, lib.Int64ToBytes(v.Timestamp))
 		} else {
-			b := bytes.NewBufferString(oldKey.Value)
-			b.WriteString(",")
-			b.Write(lib.Int64ToBytes(v.Timestamp))
-			v := b.Bytes()
+
+			bs := buffers.Get()
+			bs.AppendString(",")
+			bs.Write(lib.Int64ToBytes(v.Timestamp))
+			v := bs.Bytes()
 			tikv.Puts(timeIndexBytes, v)
+			bs.Free()
 		}
 	}
 
@@ -102,23 +124,29 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 }
 
 func writeTimeseriesData(labelMD string, samples []*prompb.Sample) {
+	buf := buffers.Get()
+	defer buf.Free()
 	for _, v := range samples {
 		//key type timeseries:doc:labelMD#timestamp
-		buffer := bytes.NewBufferString("timeseries:doc:")
-		buffer.WriteString(labelMD)
-		buffer.WriteString(":")
-		buffer.WriteString(strconv.FormatInt(v.Timestamp, 10))
-		key := buffer.Bytes()
+
+		buf.AppendString("timeseries:doc:")
+		buf.AppendString(labelMD)
+		buf.AppendString(":")
+		buf.AppendString(strconv.FormatInt(v.Timestamp, 10))
+		key := buf.Bytes()
 		//write to tikv
 		tikv.Puts(key, []byte(strconv.FormatFloat(v.Value, 'E', -1, 64)))
 		//log.Println("Write timeseries:", string(key), strconv.FormatFloat(v.Value, 'E', -1, 64))
+		buf.Reset()
 	}
 }
 
 func SaveOriDoc(labelMD string, originalMsg []byte) {
-	buffer := bytes.NewBufferString("doc:")
-	buffer.WriteString(labelMD)
-	key := buffer.Bytes()
+	buf := buffers.Get()
+	defer buf.Free()
+	buf.AppendString("doc:")
+	buf.AppendString(labelMD)
+	key := buf.Bytes()
 	tikv.Puts(key, originalMsg)
 	//log.Println("Write meta:", string(key), string(originalMsg))
 }
