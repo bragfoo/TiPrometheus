@@ -6,8 +6,8 @@ import (
 	"log"
 	"strconv"
 
-	"../prompb"
-	"../tikv"
+	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
+	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
 	"bytes"
 	"go.uber.org/zap/buffer"
 	"time"

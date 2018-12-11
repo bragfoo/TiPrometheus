@@ -1,8 +1,8 @@
 package adapter
 
 import (
-	"../prompb"
-	"../tikv"
+	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
+	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
 	"bytes"
 	"encoding/gob"
 	"github.com/bragfoo/TiPrometheus/src/modules/conf"
