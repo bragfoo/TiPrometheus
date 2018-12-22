@@ -97,7 +97,6 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	buf.AppendString("index:timeseries:")
 
 	now := time.Now().UnixNano() / int64(time.Millisecond)
-	//now = (now / 300000) * 300000
 
 	interval := int64(conf.RunTimeInfo.TimeInterval * 1000 * 60)
 	now = (now / interval) * interval

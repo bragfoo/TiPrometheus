@@ -168,8 +168,7 @@ func getTimeList(md string, tiemEndpointList []int64) []string {
 		timeIndexBytes := buffer.Bytes()
 		newLabelValue, _ := tikv.Get(timeIndexBytes)
 		if newLabelValue.Value != "" {
-			timeListTemp := newLabelValue.Value
-			timeList = append(timeList, strings.Split(timeListTemp, ",")...)
+			timeList = append(timeList, strings.Split(newLabelValue.Value, ",")...)
 		}
 	}
 
