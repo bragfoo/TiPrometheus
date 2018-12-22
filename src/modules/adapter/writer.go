@@ -3,12 +3,11 @@ package adapter
 import (
 	"github.com/bragfoo/TiPrometheus/src/lib"
 	"github.com/bragfoo/TiPrometheus/src/modules/conf"
-	"log"
 	"strconv"
-
+	
+	"bytes"
 	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
 	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
-	"bytes"
 	"go.uber.org/zap/buffer"
 	"time"
 )
@@ -21,11 +20,11 @@ func RemoteWriter(data prompb.WriteRequest) {
 	for _, oneDoc := range data.Timeseries {
 		labels := oneDoc.Labels
 		samples := oneDoc.Samples
-		log.Println("Naive write data:", labels, samples)
+		//log.Println("Naive write data:", labels, samples)
 
 		//build index and return labelID
 		labelID := buildIndex(labels, samples)
-		log.Println("LabelID:", labelID)
+		//log.Println("LabelID:", labelID)
 
 		//write timeseries data
 		writeTimeseriesData(labelID, samples)
