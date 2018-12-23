@@ -13,9 +13,10 @@ import (
 
 func TestInitMetrics(t *testing.T) {
 	testMetrics := struct {
-		Gauge   metrics.Gauge   `metric:"gauge" tags:"1=one,2=two"`
-		Counter metrics.Counter `metric:"counter"`
-		Timer   metrics.Timer   `metric:"timer"`
+		Gauge     metrics.Gauge     `metric:"gauge" tags:"1=one,2=two"`
+		Counter   metrics.Counter   `metric:"counter"`
+		Timer     metrics.Timer     `metric:"timer"`
+		Histogram metrics.Histogram `metric:"histogram" buckets:"20,40,60,80"`
 	}{}
 
 	f := metricstest.NewFactory(0)
@@ -23,12 +24,13 @@ func TestInitMetrics(t *testing.T) {
 
 	globalTags := map[string]string{"key": "value"}
 
-	err := metrics.InitOrError(&testMetrics, f, globalTags)
+	err := metrics.Init(&testMetrics, f, globalTags)
 	assert.NoError(t, err)
 
 	testMetrics.Gauge.Update(10)
 	testMetrics.Counter.Inc(5)
 	testMetrics.Timer.Record(time.Duration(time.Second * 35))
+	testMetrics.Histogram.Record(42)
 
 	// wait for metrics
 	for i := 0; i < 1000; i++ {
@@ -44,6 +46,7 @@ func TestInitMetrics(t *testing.T) {
 	assert.EqualValues(t, 5, c["counter|key=value"])
 	assert.EqualValues(t, 10, g["gauge|1=one|2=two|key=value"])
 	assert.EqualValues(t, 36863, g["timer|key=value.P50"])
+	assert.EqualValues(t, 43, g["histogram|key=value.P50"])
 
 	stopwatch := metrics.StartStopwatch(testMetrics.Timer)
 	stopwatch.Stop()
@@ -62,16 +65,38 @@ var (
 	invalidMetricType = struct {
 		InvalidMetricType int64 `metric:"counter"`
 	}{}
+
+	badHistogramBucket = struct {
+		BadHistogramBucket metrics.Histogram `metric:"histogram" buckets:"1,2,a,4"`
+	}{}
+
+	badTimerBucket = struct {
+		BadTimerBucket metrics.Timer `metric:"timer" buckets:"1"`
+	}{}
+
+	invalidBuckets = struct {
+		InvalidBuckets metrics.Counter `metric:"counter" buckets:"1"`
+	}{}
 )
 
 func TestInitMetricsFailures(t *testing.T) {
-	assert.EqualError(t, metrics.InitOrError(&noMetricTag, nil, nil), "Field NoMetricTag is missing a tag 'metric'")
+	assert.EqualError(t, metrics.Init(&noMetricTag, nil, nil), "Field NoMetricTag is missing a tag 'metric'")
 
-	assert.EqualError(t, metrics.InitOrError(&badTags, nil, nil),
+	assert.EqualError(t, metrics.Init(&badTags, nil, nil),
 		"Field [BadTags]: Tag [noValue] is not of the form key=value in 'tags' string [1=one,noValue]")
 
-	assert.EqualError(t, metrics.InitOrError(&invalidMetricType, nil, nil),
+	assert.EqualError(t, metrics.Init(&invalidMetricType, nil, nil),
 		"Field InvalidMetricType is not a pointer to timer, gauge, or counter")
+
+	assert.EqualError(t, metrics.Init(&badHistogramBucket, nil, nil),
+		"Field [BadHistogramBucket]: Bucket [a] could not be converted to float64 in 'buckets' string [1,2,a,4]")
+
+	assert.EqualError(t, metrics.Init(&badTimerBucket, nil, nil),
+		"Field [BadTimerBucket]: Buckets are not currently initialized for timer metrics")
+
+	assert.EqualError(t, metrics.Init(&invalidBuckets, nil, nil),
+		"Field [InvalidBuckets]: Buckets should only be defined for Timer and Histogram metric types")
+
 }
 
 func TestInitPanic(t *testing.T) {
@@ -81,13 +106,26 @@ func TestInitPanic(t *testing.T) {
 		}
 	}()
 
-	metrics.Init(&noMetricTag, metrics.NullFactory, nil)
+	metrics.MustInit(&noMetricTag, metrics.NullFactory, nil)
 }
 
 func TestNullMetrics(t *testing.T) {
 	// This test is just for cover
-	metrics.NullFactory.Timer("name", nil).Record(0)
-	metrics.NullFactory.Counter("name", nil).Inc(0)
-	metrics.NullFactory.Gauge("name", nil).Update(0)
-	metrics.NullFactory.Namespace("name", nil).Gauge("name2", nil).Update(0)
+	metrics.NullFactory.Timer(metrics.TimerOptions{
+		Name: "name",
+	}).Record(0)
+	metrics.NullFactory.Counter(metrics.Options{
+		Name: "name",
+	}).Inc(0)
+	metrics.NullFactory.Gauge(metrics.Options{
+		Name: "name",
+	}).Update(0)
+	metrics.NullFactory.Histogram(metrics.HistogramOptions{
+		Name: "name",
+	}).Record(0)
+	metrics.NullFactory.Namespace(metrics.NSOptions{
+		Name: "name",
+	}).Gauge(metrics.Options{
+		Name: "name2",
+	}).Update(0)
 }

@@ -1,10 +1,14 @@
 Changes by Version
 ==================
 
-2.0.0 (unreleased)
+2.0.0 (2018-12-17)
 ------------------
 
 Breaking changes:
+- Add first class support for Histograms and change factory args to structs (#63) <Gary Brown>
+- Add metric description to factory API (#61) <Gary Brown>
+- Remove metrics/go-kit/prometheus as metrics/prometheus now available (#58) <Gary Brown>
+- Add `_total` suffix for counters reported to prometheus (#54) <Gary Brown>
 - LocalBackend / Test factory moved to metrics/metricstest/ package (#46) <Patrick Ohly>, 
 - Change AssertCounterMetrics/AssertGaugeMetrics to be functions on the test factory (#51) <Yuri Shkuro>
 

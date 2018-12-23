@@ -30,3 +30,10 @@ func TestTimer(t *testing.T) {
 	timer.Record(100*time.Millisecond + 500*time.Microsecond) // 100.5 milliseconds
 	assert.EqualValues(t, 0.1005, kitHist.Quantile(0.9))
 }
+
+func TestHistogram(t *testing.T) {
+	kitHist := generic.NewHistogram("abc", 10)
+	var histogram metrics.Histogram = NewHistogram(kitHist)
+	histogram.Record(100)
+	assert.EqualValues(t, 100, kitHist.Quantile(0.9))
+}

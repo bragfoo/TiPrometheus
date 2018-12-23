@@ -3,7 +3,6 @@ package adapter
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/bragfoo/TiPrometheus/src/lib"
 	"github.com/bragfoo/TiPrometheus/src/modules/conf"
 	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
 	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
@@ -11,6 +10,7 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -131,8 +131,7 @@ func getCountMap(matchers []*prompb.LabelMatcher, buffer *buffer.Buffer) map[str
 		//get label index list
 		//key type index:label:newLabel
 		newLabelValue, _ := tikv.Get([]byte(newLabel))
-		//mdList := strings.Split(newLabelValue.Value, ",")
-		mdList := lib.ReadFixdString(32, newLabelValue.Value)
+		mdList := strings.Split(newLabelValue.Value, ",")
 
 		//mark count
 		for _, oneMD := range mdList {
@@ -169,8 +168,7 @@ func getTimeList(md string, tiemEndpointList []int64) []string {
 		timeIndexBytes := buffer.Bytes()
 		newLabelValue, _ := tikv.Get(timeIndexBytes)
 		if newLabelValue.Value != "" {
-			//timeList = append(timeList, strings.Split(newLabelValue.Value, ",")...)
-			timeList = append(timeList, lib.ReadFixdString(8, newLabelValue.Value)...)
+			timeList = append(timeList, strings.Split(newLabelValue.Value, ",")...)
 		}
 	}
 

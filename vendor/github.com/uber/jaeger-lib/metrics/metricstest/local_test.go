@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uber/jaeger-lib/metrics"
 )
 
 func TestLocalMetrics(t *testing.T) {
@@ -15,15 +16,40 @@ func TestLocalMetrics(t *testing.T) {
 
 	f := NewFactory(0)
 	defer f.Stop()
-	f.Counter("my-counter", tags).Inc(4)
-	f.Counter("my-counter", tags).Inc(6)
-	f.Counter("my-counter", nil).Inc(6)
-	f.Counter("other-counter", nil).Inc(8)
-	f.Gauge("my-gauge", nil).Update(25)
-	f.Gauge("my-gauge", nil).Update(43)
-	f.Gauge("other-gauge", nil).Update(74)
-	f.Namespace("namespace", tags).Counter("my-counter", nil).Inc(7)
-	f.Namespace("ns.subns", nil).Counter("", map[string]string{"service": "a-service"}).Inc(9)
+	f.Counter(metrics.Options{
+		Name: "my-counter",
+		Tags: tags,
+	}).Inc(4)
+	f.Counter(metrics.Options{
+		Name: "my-counter",
+		Tags: tags,
+	}).Inc(6)
+	f.Counter(metrics.Options{
+		Name: "my-counter",
+	}).Inc(6)
+	f.Counter(metrics.Options{
+		Name: "other-counter",
+	}).Inc(8)
+	f.Gauge(metrics.Options{
+		Name: "my-gauge",
+	}).Update(25)
+	f.Gauge(metrics.Options{
+		Name: "my-gauge",
+	}).Update(43)
+	f.Gauge(metrics.Options{
+		Name: "other-gauge",
+	}).Update(74)
+	f.Namespace(metrics.NSOptions{
+		Name: "namespace",
+		Tags: tags,
+	}).Counter(metrics.Options{
+		Name: "my-counter",
+	}).Inc(7)
+	f.Namespace(metrics.NSOptions{
+		Name: "ns.subns",
+	}).Counter(metrics.Options{
+		Tags: map[string]string{"service": "a-service"},
+	}).Inc(9)
 
 	timings := map[string][]time.Duration{
 		"foo-latency": {
@@ -42,9 +68,17 @@ func TestLocalMetrics(t *testing.T) {
 
 	for metric, timing := range timings {
 		for _, d := range timing {
-			f.Timer(metric, nil).Record(d)
+			f.Timer(metrics.TimerOptions{
+				Name: metric,
+			}).Record(d)
 		}
 	}
+
+	histogram := f.Histogram(metrics.HistogramOptions{
+		Name: "my-histo",
+	})
+	histogram.Record(321)
+	histogram.Record(42)
 
 	c, g := f.Snapshot()
 	require.NotNil(t, c)
@@ -72,6 +106,12 @@ func TestLocalMetrics(t *testing.T) {
 		"foo-latency.P99":  36863,
 		"foo-latency.P999": 36863,
 		"my-gauge":         43,
+		"my-histo.P50":     43,
+		"my-histo.P75":     335,
+		"my-histo.P90":     335,
+		"my-histo.P95":     335,
+		"my-histo.P99":     335,
+		"my-histo.P999":    335,
 		"other-gauge":      74,
 	}, g)
 
@@ -90,7 +130,9 @@ func TestLocalMetricsInterval(t *testing.T) {
 	f := NewFactory(refreshInterval)
 	defer f.Stop()
 
-	f.Timer("timer", nil).Record(1)
+	f.Timer(metrics.TimerOptions{
+		Name: "timer",
+	}).Record(1)
 
 	f.tm.Lock()
 	timer := f.timers["timer"]

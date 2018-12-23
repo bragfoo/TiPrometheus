@@ -36,14 +36,20 @@ type factory struct {
 	factory xkit.Factory
 }
 
-func (f *factory) Counter(name string) metrics.Counter {
-	return xkit.NewCounter(f.factory.Counter(name))
+func (f *factory) Counter(options adapters.TaglessOptions) metrics.Counter {
+	return xkit.NewCounter(f.factory.Counter(options.Name))
 }
 
-func (f *factory) Gauge(name string) metrics.Gauge {
-	return xkit.NewGauge(f.factory.Gauge(name))
+func (f *factory) Gauge(options adapters.TaglessOptions) metrics.Gauge {
+	return xkit.NewGauge(f.factory.Gauge(options.Name))
 }
 
-func (f *factory) Timer(name string) metrics.Timer {
-	return xkit.NewTimer(f.factory.Histogram(name))
+func (f *factory) Timer(options adapters.TaglessTimerOptions) metrics.Timer {
+	// TODO: Provide support for buckets
+	return xkit.NewTimer(f.factory.Histogram(options.Name))
+}
+
+func (f *factory) Histogram(options adapters.TaglessHistogramOptions) metrics.Histogram {
+	// TODO: Provide support for buckets
+	return xkit.NewHistogram(f.factory.Histogram(options.Name))
 }

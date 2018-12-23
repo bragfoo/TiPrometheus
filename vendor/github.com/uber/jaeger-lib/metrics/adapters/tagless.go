@@ -14,14 +14,39 @@
 
 package adapters
 
-import "github.com/uber/jaeger-lib/metrics"
+import (
+	"time"
+
+	"github.com/uber/jaeger-lib/metrics"
+)
+
+// TaglessOptions defines the information associated with a metric
+type TaglessOptions struct {
+	Name string
+	Help string
+}
+
+// TaglessTimerOptions defines the information associated with a metric
+type TaglessTimerOptions struct {
+	Name    string
+	Help    string
+	Buckets []time.Duration
+}
+
+// TaglessHistogramOptions defines the information associated with a metric
+type TaglessHistogramOptions struct {
+	Name    string
+	Help    string
+	Buckets []float64
+}
 
 // FactoryWithoutTags creates metrics based on name only, without tags.
 // Suitable for integrating with statsd-like backends that don't support tags.
 type FactoryWithoutTags interface {
-	Counter(name string) metrics.Counter
-	Gauge(name string) metrics.Gauge
-	Timer(name string) metrics.Timer
+	Counter(options TaglessOptions) metrics.Counter
+	Gauge(options TaglessOptions) metrics.Gauge
+	Timer(options TaglessTimerOptions) metrics.Timer
+	Histogram(options TaglessHistogramOptions) metrics.Histogram
 }
 
 // WrapFactoryWithoutTags creates a real metrics.Factory that supports subscopes.
@@ -41,19 +66,38 @@ type tagless struct {
 	factory FactoryWithoutTags
 }
 
-func (f *tagless) Counter(name string, tags map[string]string) metrics.Counter {
-	fullName := f.getFullName(name, tags)
-	return f.factory.Counter(fullName)
+func (f *tagless) Counter(options metrics.Options) metrics.Counter {
+	fullName := f.getFullName(options.Name, options.Tags)
+	return f.factory.Counter(TaglessOptions{
+		Name: fullName,
+		Help: options.Help,
+	})
 }
 
-func (f *tagless) Gauge(name string, tags map[string]string) metrics.Gauge {
-	fullName := f.getFullName(name, tags)
-	return f.factory.Gauge(fullName)
+func (f *tagless) Gauge(options metrics.Options) metrics.Gauge {
+	fullName := f.getFullName(options.Name, options.Tags)
+	return f.factory.Gauge(TaglessOptions{
+		Name: fullName,
+		Help: options.Help,
+	})
 }
 
-func (f *tagless) Timer(name string, tags map[string]string) metrics.Timer {
-	fullName := f.getFullName(name, tags)
-	return f.factory.Timer(fullName)
+func (f *tagless) Timer(options metrics.TimerOptions) metrics.Timer {
+	fullName := f.getFullName(options.Name, options.Tags)
+	return f.factory.Timer(TaglessTimerOptions{
+		Name:    fullName,
+		Help:    options.Help,
+		Buckets: options.Buckets,
+	})
+}
+
+func (f *tagless) Histogram(options metrics.HistogramOptions) metrics.Histogram {
+	fullName := f.getFullName(options.Name, options.Tags)
+	return f.factory.Histogram(TaglessHistogramOptions{
+		Name:    fullName,
+		Help:    options.Help,
+		Buckets: options.Buckets,
+	})
 }
 
 func (f *tagless) getFullName(name string, tags map[string]string) string {

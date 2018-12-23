@@ -64,3 +64,18 @@ func NewTimer(timer tally.Timer) *Timer {
 func (t *Timer) Record(delta time.Duration) {
 	t.timer.Record(delta)
 }
+
+// Histogram is an adapter from go-tally Histogram to jaeger-lib Histogram
+type Histogram struct {
+	histogram tally.Histogram
+}
+
+// NewHistogram creates a new Histogram
+func NewHistogram(histogram tally.Histogram) *Histogram {
+	return &Histogram{histogram: histogram}
+}
+
+// Record saves the value passed in.
+func (h *Histogram) Record(value float64) {
+	h.histogram.RecordValue(value)
+}

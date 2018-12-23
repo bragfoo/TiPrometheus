@@ -73,9 +73,9 @@ var gzipPool = sync.Pool{
 // Gatherer, different instrumentation, and non-default HandlerOpts), use the
 // HandlerFor function. See there for details.
 func Handler() http.Handler {
-	// not default
-	return HandlerFor(prometheus.DefaultGatherer, HandlerOpts{})
-	// return InstrumentMetricHandler(prometheus.DefaultRegisterer, HandlerFor(prometheus.DefaultGatherer, HandlerOpts{}),)
+	return InstrumentMetricHandler(
+		prometheus.DefaultRegisterer, HandlerFor(prometheus.DefaultGatherer, HandlerOpts{}),
+	)
 }
 
 // HandlerFor returns an uninstrumented http.Handler for the provided
@@ -89,6 +89,7 @@ func HandlerFor(reg prometheus.Gatherer, opts HandlerOpts) http.Handler {
 	if opts.MaxRequestsInFlight > 0 {
 		inFlightSem = make(chan struct{}, opts.MaxRequestsInFlight)
 	}
+
 	h := http.HandlerFunc(func(rsp http.ResponseWriter, req *http.Request) {
 		if inFlightSem != nil {
 			select {
@@ -120,9 +121,11 @@ func HandlerFor(reg prometheus.Gatherer, opts HandlerOpts) http.Handler {
 				return
 			}
 		}
+
 		contentType := expfmt.Negotiate(req.Header)
 		header := rsp.Header()
 		header.Set(contentTypeHeader, string(contentType))
+
 		w := io.Writer(rsp)
 		if !opts.DisableCompression && gzipAccepted(req.Header) {
 			header.Set(contentEncodingHeader, "gzip")
@@ -134,7 +137,9 @@ func HandlerFor(reg prometheus.Gatherer, opts HandlerOpts) http.Handler {
 
 			w = gz
 		}
+
 		enc := expfmt.NewEncoder(w, contentType)
+
 		var lastErr error
 		for _, mf := range mfs {
 			if err := enc.Encode(mf); err != nil {
@@ -158,6 +163,7 @@ func HandlerFor(reg prometheus.Gatherer, opts HandlerOpts) http.Handler {
 			httpError(rsp, lastErr)
 		}
 	})
+
 	if opts.Timeout <= 0 {
 		return h
 	}
@@ -202,6 +208,7 @@ func InstrumentMetricHandler(reg prometheus.Registerer, handler http.Handler) ht
 			panic(err)
 		}
 	}
+
 	gge := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "promhttp_metric_handler_requests_in_flight",
 		Help: "Current number of scrapes being served.",
@@ -213,6 +220,7 @@ func InstrumentMetricHandler(reg prometheus.Registerer, handler http.Handler) ht
 			panic(err)
 		}
 	}
+
 	return InstrumentHandlerCounter(cnt, InstrumentHandlerInFlight(gge, handler))
 }
 

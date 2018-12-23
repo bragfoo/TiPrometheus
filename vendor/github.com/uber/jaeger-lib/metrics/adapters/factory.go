@@ -20,9 +20,10 @@ import (
 
 // FactoryWithTags creates metrics with fully qualified name and tags.
 type FactoryWithTags interface {
-	Counter(name string, tags map[string]string) metrics.Counter
-	Gauge(name string, tags map[string]string) metrics.Gauge
-	Timer(name string, tags map[string]string) metrics.Timer
+	Counter(options metrics.Options) metrics.Counter
+	Gauge(options metrics.Options) metrics.Gauge
+	Timer(options metrics.TimerOptions) metrics.Timer
+	Histogram(options metrics.HistogramOptions) metrics.Histogram
 }
 
 // Options affect how the adapter factory behaves.
@@ -63,32 +64,57 @@ type factory struct {
 	cache   *cache
 }
 
-func (f *factory) Counter(name string, tags map[string]string) metrics.Counter {
-	fullName, fullTags, key := f.getKey(name, tags)
+func (f *factory) Counter(options metrics.Options) metrics.Counter {
+	fullName, fullTags, key := f.getKey(options.Name, options.Tags)
 	return f.cache.getOrSetCounter(key, func() metrics.Counter {
-		return f.factory.Counter(fullName, fullTags)
+		return f.factory.Counter(metrics.Options{
+			Name: fullName,
+			Tags: fullTags,
+			Help: options.Help,
+		})
 	})
 }
 
-func (f *factory) Gauge(name string, tags map[string]string) metrics.Gauge {
-	fullName, fullTags, key := f.getKey(name, tags)
+func (f *factory) Gauge(options metrics.Options) metrics.Gauge {
+	fullName, fullTags, key := f.getKey(options.Name, options.Tags)
 	return f.cache.getOrSetGauge(key, func() metrics.Gauge {
-		return f.factory.Gauge(fullName, fullTags)
+		return f.factory.Gauge(metrics.Options{
+			Name: fullName,
+			Tags: fullTags,
+			Help: options.Help,
+		})
 	})
 }
 
-func (f *factory) Timer(name string, tags map[string]string) metrics.Timer {
-	fullName, fullTags, key := f.getKey(name, tags)
+func (f *factory) Timer(options metrics.TimerOptions) metrics.Timer {
+	fullName, fullTags, key := f.getKey(options.Name, options.Tags)
 	return f.cache.getOrSetTimer(key, func() metrics.Timer {
-		return f.factory.Timer(fullName, fullTags)
+		return f.factory.Timer(metrics.TimerOptions{
+			Name:    fullName,
+			Tags:    fullTags,
+			Help:    options.Help,
+			Buckets: options.Buckets,
+		})
 	})
 }
 
-func (f *factory) Namespace(name string, tags map[string]string) metrics.Factory {
+func (f *factory) Histogram(options metrics.HistogramOptions) metrics.Histogram {
+	fullName, fullTags, key := f.getKey(options.Name, options.Tags)
+	return f.cache.getOrSetHistogram(key, func() metrics.Histogram {
+		return f.factory.Histogram(metrics.HistogramOptions{
+			Name:    fullName,
+			Tags:    fullTags,
+			Help:    options.Help,
+			Buckets: options.Buckets,
+		})
+	})
+}
+
+func (f *factory) Namespace(scope metrics.NSOptions) metrics.Factory {
 	return &factory{
 		cache:   f.cache,
-		scope:   f.subScope(name),
-		tags:    f.mergeTags(tags),
+		scope:   f.subScope(scope.Name),
+		tags:    f.mergeTags(scope.Tags),
 		factory: f.factory,
 		Options: f.Options,
 	}

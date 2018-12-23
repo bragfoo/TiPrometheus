@@ -30,28 +30,31 @@ import (
 // A Backend is a metrics provider which aggregates data in-vm, and
 // allows exporting snapshots to shove the data into a remote collector
 type Backend struct {
-	cm       sync.Mutex
-	gm       sync.Mutex
-	tm       sync.Mutex
-	counters map[string]*int64
-	gauges   map[string]*int64
-	timers   map[string]*localBackendTimer
-	stop     chan struct{}
-	wg       sync.WaitGroup
-	TagsSep  string
-	TagKVSep string
+	cm         sync.Mutex
+	gm         sync.Mutex
+	tm         sync.Mutex
+	hm         sync.Mutex
+	counters   map[string]*int64
+	gauges     map[string]*int64
+	timers     map[string]*localBackendTimer
+	histograms map[string]*localBackendHistogram
+	stop       chan struct{}
+	wg         sync.WaitGroup
+	TagsSep    string
+	TagKVSep   string
 }
 
 // NewBackend returns a new Backend. The collectionInterval is the histogram
 // time window for each timer.
 func NewBackend(collectionInterval time.Duration) *Backend {
 	b := &Backend{
-		counters: make(map[string]*int64),
-		gauges:   make(map[string]*int64),
-		timers:   make(map[string]*localBackendTimer),
-		stop:     make(chan struct{}),
-		TagsSep:  "|",
-		TagKVSep: "=",
+		counters:   make(map[string]*int64),
+		gauges:     make(map[string]*int64),
+		timers:     make(map[string]*localBackendTimer),
+		histograms: make(map[string]*localBackendHistogram),
+		stop:       make(chan struct{}),
+		TagsSep:    "|",
+		TagKVSep:   "=",
 	}
 	if collectionInterval == 0 {
 		// Use one histogram time window for all timers
@@ -70,9 +73,12 @@ func (b *Backend) Clear() {
 	defer b.gm.Unlock()
 	b.tm.Lock()
 	defer b.tm.Unlock()
+	b.hm.Lock()
+	defer b.hm.Unlock()
 	b.counters = make(map[string]*int64)
 	b.gauges = make(map[string]*int64)
 	b.timers = make(map[string]*localBackendTimer)
+	b.histograms = make(map[string]*localBackendHistogram)
 }
 
 func (b *Backend) runLoop(collectionInterval time.Duration) {
@@ -126,6 +132,34 @@ func (b *Backend) UpdateGauge(name string, tags map[string]string, value int64) 
 		return
 	}
 	atomic.StoreInt64(gauge, value)
+}
+
+// RecordHistogram records a timing duration
+func (b *Backend) RecordHistogram(name string, tags map[string]string, v float64) {
+	name = metrics.GetKey(name, tags, b.TagsSep, b.TagKVSep)
+	histogram := b.findOrCreateHistogram(name)
+	histogram.Lock()
+	histogram.hist.Current.RecordValue(int64(v))
+	histogram.Unlock()
+}
+
+func (b *Backend) findOrCreateHistogram(name string) *localBackendHistogram {
+	b.hm.Lock()
+	defer b.hm.Unlock()
+	if t, ok := b.histograms[name]; ok {
+		return t
+	}
+
+	t := &localBackendHistogram{
+		hist: hdrhistogram.NewWindowed(5, 0, int64((5*time.Minute)/time.Millisecond), 1),
+	}
+	b.histograms[name] = t
+	return t
+}
+
+type localBackendHistogram struct {
+	sync.Mutex
+	hist *hdrhistogram.WindowedHistogram
 }
 
 // RecordTimer records a timing duration
@@ -201,6 +235,22 @@ func (b *Backend) Snapshot() (counters, gauges map[string]int64) {
 		}
 	}
 
+	b.hm.Lock()
+	histograms := make(map[string]*localBackendHistogram)
+	for histogramName, histogram := range b.histograms {
+		histograms[histogramName] = histogram
+	}
+	b.hm.Unlock()
+
+	for histogramName, histogram := range histograms {
+		histogram.Lock()
+		hist := histogram.hist.Merge()
+		histogram.Unlock()
+		for name, q := range percentiles {
+			gauges[histogramName+"."+name] = hist.ValueAtQuantile(q)
+		}
+	}
+
 	return
 }
 
@@ -211,9 +261,11 @@ func (b *Backend) Stop() {
 }
 
 type stats struct {
-	name         string
-	tags         map[string]string
-	localBackend *Backend
+	name            string
+	tags            map[string]string
+	buckets         []float64
+	durationBuckets []time.Duration
+	localBackend    *Backend
 }
 
 type localTimer struct {
@@ -222,6 +274,14 @@ type localTimer struct {
 
 func (l *localTimer) Record(d time.Duration) {
 	l.localBackend.RecordTimer(l.name, l.tags, d)
+}
+
+type localHistogram struct {
+	stats
+}
+
+func (l *localHistogram) Record(v float64) {
+	l.localBackend.RecordHistogram(l.name, l.tags, v)
 }
 
 type localCounter struct {
@@ -279,43 +339,56 @@ func (l *Factory) newNamespace(name string) string {
 }
 
 // Counter returns a local stats counter
-func (l *Factory) Counter(name string, tags map[string]string) metrics.Counter {
+func (l *Factory) Counter(options metrics.Options) metrics.Counter {
 	return &localCounter{
 		stats{
-			name:         l.newNamespace(name),
-			tags:         l.appendTags(tags),
+			name:         l.newNamespace(options.Name),
+			tags:         l.appendTags(options.Tags),
 			localBackend: l.Backend,
 		},
 	}
 }
 
 // Timer returns a local stats timer.
-func (l *Factory) Timer(name string, tags map[string]string) metrics.Timer {
+func (l *Factory) Timer(options metrics.TimerOptions) metrics.Timer {
 	return &localTimer{
 		stats{
-			name:         l.newNamespace(name),
-			tags:         l.appendTags(tags),
-			localBackend: l.Backend,
+			name:            l.newNamespace(options.Name),
+			tags:            l.appendTags(options.Tags),
+			durationBuckets: options.Buckets,
+			localBackend:    l.Backend,
 		},
 	}
 }
 
 // Gauge returns a local stats gauge.
-func (l *Factory) Gauge(name string, tags map[string]string) metrics.Gauge {
+func (l *Factory) Gauge(options metrics.Options) metrics.Gauge {
 	return &localGauge{
 		stats{
-			name:         l.newNamespace(name),
-			tags:         l.appendTags(tags),
+			name:         l.newNamespace(options.Name),
+			tags:         l.appendTags(options.Tags),
+			localBackend: l.Backend,
+		},
+	}
+}
+
+// Histogram returns a local stats histogram.
+func (l *Factory) Histogram(options metrics.HistogramOptions) metrics.Histogram {
+	return &localHistogram{
+		stats{
+			name:         l.newNamespace(options.Name),
+			tags:         l.appendTags(options.Tags),
+			buckets:      options.Buckets,
 			localBackend: l.Backend,
 		},
 	}
 }
 
 // Namespace returns a new namespace.
-func (l *Factory) Namespace(name string, tags map[string]string) metrics.Factory {
+func (l *Factory) Namespace(scope metrics.NSOptions) metrics.Factory {
 	return &Factory{
-		namespace: l.newNamespace(name),
-		tags:      l.appendTags(tags),
+		namespace: l.newNamespace(scope.Name),
+		tags:      l.appendTags(scope.Tags),
 		Backend:   l.Backend,
 	}
 }

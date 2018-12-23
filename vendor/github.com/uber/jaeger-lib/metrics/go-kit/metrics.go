@@ -64,3 +64,18 @@ func NewTimer(hist kit.Histogram) *Timer {
 func (t *Timer) Record(delta time.Duration) {
 	t.hist.Observe(delta.Seconds())
 }
+
+// Histogram is an adapter from go-kit Histogram to jaeger-lib Histogram
+type Histogram struct {
+	hist kit.Histogram
+}
+
+// NewHistogram creates a new Histogram
+func NewHistogram(hist kit.Histogram) *Histogram {
+	return &Histogram{hist: hist}
+}
+
+// Record saves the value passed in.
+func (t *Histogram) Record(value float64) {
+	t.hist.Observe(value)
+}

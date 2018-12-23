@@ -3,6 +3,7 @@ package adapter
 import (
 	"github.com/bragfoo/TiPrometheus/src/lib"
 	"github.com/bragfoo/TiPrometheus/src/modules/conf"
+	"log"
 	"strconv"
 
 	"bytes"
@@ -83,7 +84,7 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 				tikv.Puts([]byte(key), []byte(labelID))
 			} else {
 				b := bytes.NewBufferString(oldKey.Value)
-				//b.WriteString(",")
+				b.WriteString(",")
 				b.WriteString(labelID)
 				v := b.Bytes()
 				tikv.Puts([]byte(key), v)
@@ -107,18 +108,17 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 
 	timeIndexBytes := buf.Bytes()
 
-	//samples index
+	//timeseries index
 	for _, v := range samples {
 		oldKey, _ := tikv.Get(timeIndexBytes)
+		log.Println("Timeseries indexStatus:", oldKey)
 		if oldKey.Value == "" {
-			//tikv.Puts(timeIndexBytes, lib.Int64ToBytes(v.Timestamp))
-			tikv.Puts(timeIndexBytes, lib.Int64WriteBytes(v.Timestamp))
+			tikv.Puts(timeIndexBytes, lib.Int64ToBytes(v.Timestamp))
 		} else {
-
 			bs := buffers.Get()
-			//bs.AppendString(",")
-			//bs.Write(lib.Int64ToBytes(v.Timestamp))
-			bs.Write(lib.Int64WriteBytes(v.Timestamp))
+			bs.AppendString(oldKey.Value)
+			bs.AppendString(",")
+			bs.AppendString(strconv.FormatInt(v.Timestamp, 10))
 			v := bs.Bytes()
 			tikv.Puts(timeIndexBytes, v)
 			bs.Free()

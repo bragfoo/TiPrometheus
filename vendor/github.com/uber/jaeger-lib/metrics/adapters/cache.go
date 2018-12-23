@@ -21,17 +21,19 @@ import (
 )
 
 type cache struct {
-	lock     sync.Mutex
-	counters map[string]metrics.Counter
-	gauges   map[string]metrics.Gauge
-	timers   map[string]metrics.Timer
+	lock       sync.Mutex
+	counters   map[string]metrics.Counter
+	gauges     map[string]metrics.Gauge
+	timers     map[string]metrics.Timer
+	histograms map[string]metrics.Histogram
 }
 
 func newCache() *cache {
 	return &cache{
-		counters: make(map[string]metrics.Counter),
-		gauges:   make(map[string]metrics.Gauge),
-		timers:   make(map[string]metrics.Timer),
+		counters:   make(map[string]metrics.Counter),
+		gauges:     make(map[string]metrics.Gauge),
+		timers:     make(map[string]metrics.Timer),
+		histograms: make(map[string]metrics.Histogram),
 	}
 }
 
@@ -64,6 +66,17 @@ func (r *cache) getOrSetTimer(name string, create func() metrics.Timer) metrics.
 	if !ok {
 		t = create()
 		r.timers[name] = t
+	}
+	return t
+}
+
+func (r *cache) getOrSetHistogram(name string, create func() metrics.Histogram) metrics.Histogram {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	t, ok := r.histograms[name]
+	if !ok {
+		t = create()
+		r.histograms[name] = t
 	}
 	return t
 }

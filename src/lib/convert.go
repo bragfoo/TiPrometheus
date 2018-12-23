@@ -25,20 +25,20 @@ func Int64ToBytes(i int64) []byte {
 	return []byte(strconv.FormatInt(i, 10))
 }
 
-func MakeMDByByte(initByte []byte) string {
-	m := md5.New()
-	m.Write(initByte)
-	md := m.Sum(nil)
-	mdString := hex.EncodeToString(md)
-	return mdString
-}
-
 func Int64WriteBytes(i int64) []byte {
 	buf := buffers.Get()
 	defer buf.Free()
 	binary.Write(buf, binary.BigEndian, i)
 	b := buf.Bytes()
 	return b
+}
+
+func MakeMDByByte(initByte []byte) string {
+	m := md5.New()
+	m.Write(initByte)
+	md := m.Sum(nil)
+	mdString := hex.EncodeToString(md)
+	return mdString
 }
 
 func ReadFixedLength(step int, bts []byte) []string {
