@@ -1,0 +1,24 @@
+package: github.com/bragfoo/TiPrometheus
+import:
+- package: github.com/BurntSushi/toml
+  version: ^0.3.1
+- package: github.com/gogo/protobuf
+  version: ^1.2.0
+  subpackages:
+  - proto
+- package: github.com/golang/snappy
+- package: github.com/pingcap/tidb
+  version: ^2.1.2
+  subpackages:
+  - config
+  - store/tikv
+- package: github.com/prometheus/client_golang
+  version: ^0.9.2
+  subpackages:
+  - prometheus
+  - prometheus/promauto
+  - prometheus/promhttp
+- package: go.uber.org/zap
+  version: ^1.9.1
+  subpackages:
+  - buffer
