@@ -103,8 +103,8 @@ func (f *factory) nameAndTagsList(nom string, tags map[string]string) (name stri
 	return
 }
 
-func (f *factory) Counter(options metrics.Options) metrics.Counter {
-	name, tagsList := f.nameAndTagsList(options.Name, options.Tags)
+func (f *factory) Counter(name string, tags map[string]string) metrics.Counter {
+	name, tagsList := f.nameAndTagsList(name, tags)
 	counter := f.factory.Counter(name)
 	if len(tagsList) > 0 {
 		counter = counter.With(tagsList...)
@@ -112,8 +112,8 @@ func (f *factory) Counter(options metrics.Options) metrics.Counter {
 	return NewCounter(counter)
 }
 
-func (f *factory) Timer(options metrics.TimerOptions) metrics.Timer {
-	name, tagsList := f.nameAndTagsList(options.Name, options.Tags)
+func (f *factory) Timer(name string, tags map[string]string) metrics.Timer {
+	name, tagsList := f.nameAndTagsList(name, tags)
 	hist := f.factory.Histogram(name)
 	if len(tagsList) > 0 {
 		hist = hist.With(tagsList...)
@@ -121,8 +121,8 @@ func (f *factory) Timer(options metrics.TimerOptions) metrics.Timer {
 	return NewTimer(hist)
 }
 
-func (f *factory) Gauge(options metrics.Options) metrics.Gauge {
-	name, tagsList := f.nameAndTagsList(options.Name, options.Tags)
+func (f *factory) Gauge(name string, tags map[string]string) metrics.Gauge {
+	name, tagsList := f.nameAndTagsList(name, tags)
 	gauge := f.factory.Gauge(name)
 	if len(tagsList) > 0 {
 		gauge = gauge.With(tagsList...)
@@ -130,19 +130,10 @@ func (f *factory) Gauge(options metrics.Options) metrics.Gauge {
 	return NewGauge(gauge)
 }
 
-func (f *factory) Histogram(options metrics.HistogramOptions) metrics.Histogram {
-	name, tagsList := f.nameAndTagsList(options.Name, options.Tags)
-	hist := f.factory.Histogram(name)
-	if len(tagsList) > 0 {
-		hist = hist.With(tagsList...)
-	}
-	return NewHistogram(hist)
-}
-
-func (f *factory) Namespace(scope metrics.NSOptions) metrics.Factory {
+func (f *factory) Namespace(name string, tags map[string]string) metrics.Factory {
 	return &factory{
-		scope:    f.subScope(scope.Name),
-		tags:     f.mergeTags(scope.Tags),
+		scope:    f.subScope(name),
+		tags:     f.mergeTags(tags),
 		factory:  f.factory,
 		scopeSep: f.scopeSep,
 		tagsSep:  f.tagsSep,

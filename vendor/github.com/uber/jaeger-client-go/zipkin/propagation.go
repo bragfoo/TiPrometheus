@@ -75,7 +75,7 @@ func (p Propagator) Extract(abstractCarrier interface{}) (jaeger.SpanContext, er
 			parentID, err = strconv.ParseUint(value, 16, 64)
 		} else if key == "x-b3-spanid" {
 			spanID, err = strconv.ParseUint(value, 16, 64)
-		} else if key == "x-b3-sampled" && (value == "1" || value == "true") {
+		} else if key == "x-b3-sampled" && value == "1" {
 			sampled = true
 		}
 		return err

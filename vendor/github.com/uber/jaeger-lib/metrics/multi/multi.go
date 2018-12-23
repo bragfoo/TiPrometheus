@@ -43,12 +43,12 @@ func (c *counter) Inc(delta int64) {
 }
 
 // Counter implements metrics.Factory interface
-func (f *Factory) Counter(options metrics.Options) metrics.Counter {
+func (f *Factory) Counter(name string, tags map[string]string) metrics.Counter {
 	counter := &counter{
 		counters: make([]metrics.Counter, len(f.factories)),
 	}
 	for i, factory := range f.factories {
-		counter.counters[i] = factory.Counter(options)
+		counter.counters[i] = factory.Counter(name, tags)
 	}
 	return counter
 }
@@ -64,35 +64,14 @@ func (t *timer) Record(delta time.Duration) {
 }
 
 // Timer implements metrics.Factory interface
-func (f *Factory) Timer(options metrics.TimerOptions) metrics.Timer {
+func (f *Factory) Timer(name string, tags map[string]string) metrics.Timer {
 	timer := &timer{
 		timers: make([]metrics.Timer, len(f.factories)),
 	}
 	for i, factory := range f.factories {
-		timer.timers[i] = factory.Timer(options)
+		timer.timers[i] = factory.Timer(name, tags)
 	}
 	return timer
-}
-
-type histogram struct {
-	histograms []metrics.Histogram
-}
-
-func (h *histogram) Record(value float64) {
-	for _, histogram := range h.histograms {
-		histogram.Record(value)
-	}
-}
-
-// Histogram implements metrics.Factory interface
-func (f *Factory) Histogram(options metrics.HistogramOptions) metrics.Histogram {
-	histogram := &histogram{
-		histograms: make([]metrics.Histogram, len(f.factories)),
-	}
-	for i, factory := range f.factories {
-		histogram.histograms[i] = factory.Histogram(options)
-	}
-	return histogram
 }
 
 type gauge struct {
@@ -106,23 +85,23 @@ func (t *gauge) Update(value int64) {
 }
 
 // Gauge implements metrics.Factory interface
-func (f *Factory) Gauge(options metrics.Options) metrics.Gauge {
+func (f *Factory) Gauge(name string, tags map[string]string) metrics.Gauge {
 	gauge := &gauge{
 		gauges: make([]metrics.Gauge, len(f.factories)),
 	}
 	for i, factory := range f.factories {
-		gauge.gauges[i] = factory.Gauge(options)
+		gauge.gauges[i] = factory.Gauge(name, tags)
 	}
 	return gauge
 }
 
 // Namespace implements metrics.Factory interface
-func (f *Factory) Namespace(scope metrics.NSOptions) metrics.Factory {
+func (f *Factory) Namespace(name string, tags map[string]string) metrics.Factory {
 	newFactory := &Factory{
 		factories: make([]metrics.Factory, len(f.factories)),
 	}
 	for i, factory := range f.factories {
-		newFactory.factories[i] = factory.Namespace(scope)
+		newFactory.factories[i] = factory.Namespace(name, tags)
 	}
 	return newFactory
 }

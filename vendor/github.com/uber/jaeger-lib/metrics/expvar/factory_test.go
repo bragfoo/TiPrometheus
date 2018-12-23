@@ -22,43 +22,38 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/uber/jaeger-lib/metrics"
 )
 
 var (
-	id              = time.Now().UnixNano()
-	prefix          = fmt.Sprintf("test_%d", id)
-	counterPrefix   = prefix + "_counter_"
-	gaugePrefix     = prefix + "_gauge_"
-	timerPrefix     = prefix + "_timer_"
-	histogramPrefix = prefix + "_histogram_"
+	id            = time.Now().UnixNano()
+	prefix        = fmt.Sprintf("test_%d", id)
+	counterPrefix = prefix + "_counter_"
+	gaugePrefix   = prefix + "_gauge_"
+	timerPrefix   = prefix + "_timer_"
 
 	tagsA = map[string]string{"a": "b"}
 	tagsX = map[string]string{"x": "y"}
 )
 
 func TestFactory(t *testing.T) {
-	buckets := []float64{10, 20, 30, 40, 50, 60}
 	testCases := []struct {
 		name            string
 		tags            map[string]string
-		buckets         []float64
-		durationBuckets []time.Duration
 		namespace       string
 		nsTags          map[string]string
 		fullName        string
 		expectedCounter string
 	}{
-		{name: "x", fullName: "%sx", buckets: buckets},
-		{tags: tagsX, fullName: "%s.x_y", buckets: buckets},
-		{name: "x", tags: tagsA, fullName: "%sx.a_b", buckets: buckets},
-		{namespace: "y", fullName: "y.%s", buckets: buckets},
-		{nsTags: tagsA, fullName: "%s.a_b", buckets: buckets},
-		{namespace: "y", nsTags: tagsX, fullName: "y.%s.x_y", buckets: buckets},
-		{name: "x", namespace: "y", nsTags: tagsX, fullName: "y.%sx.x_y", buckets: buckets},
-		{name: "x", tags: tagsX, namespace: "y", nsTags: tagsX, fullName: "y.%sx.x_y", expectedCounter: "84", buckets: buckets},
-		{name: "x", tags: tagsA, namespace: "y", nsTags: tagsX, fullName: "y.%sx.a_b.x_y", buckets: buckets},
-		{name: "x", tags: tagsX, namespace: "y", nsTags: tagsA, fullName: "y.%sx.a_b.x_y", expectedCounter: "84", buckets: buckets},
+		{name: "x", fullName: "%sx"},
+		{tags: tagsX, fullName: "%s.x_y"},
+		{name: "x", tags: tagsA, fullName: "%sx.a_b"},
+		{namespace: "y", fullName: "y.%s"},
+		{nsTags: tagsA, fullName: "%s.a_b"},
+		{namespace: "y", nsTags: tagsX, fullName: "y.%s.x_y"},
+		{name: "x", namespace: "y", nsTags: tagsX, fullName: "y.%sx.x_y"},
+		{name: "x", tags: tagsX, namespace: "y", nsTags: tagsX, fullName: "y.%sx.x_y", expectedCounter: "84"},
+		{name: "x", tags: tagsA, namespace: "y", nsTags: tagsX, fullName: "y.%sx.a_b.x_y"},
+		{name: "x", tags: tagsX, namespace: "y", nsTags: tagsA, fullName: "y.%sx.a_b.x_y", expectedCounter: "84"},
 	}
 	f := NewFactory(2)
 	for _, testCase := range testCases {
@@ -68,59 +63,24 @@ func TestFactory(t *testing.T) {
 			}
 			ff := f
 			if testCase.namespace != "" || testCase.nsTags != nil {
-				ff = f.Namespace(metrics.NSOptions{
-					Name: testCase.namespace,
-					Tags: testCase.nsTags,
-				})
+				ff = f.Namespace(testCase.namespace, testCase.nsTags)
 			}
-			counter := ff.Counter(metrics.Options{
-				Name: counterPrefix + testCase.name,
-				Tags: testCase.tags,
-			})
-			gauge := ff.Gauge(metrics.Options{
-				Name: gaugePrefix + testCase.name,
-				Tags: testCase.tags,
-			})
-			timer := ff.Timer(metrics.TimerOptions{
-				Name:    timerPrefix + testCase.name,
-				Tags:    testCase.tags,
-				Buckets: testCase.durationBuckets,
-			})
-			histogram := ff.Histogram(metrics.HistogramOptions{
-				Name:    histogramPrefix + testCase.name,
-				Tags:    testCase.tags,
-				Buckets: testCase.buckets,
-			})
+			counter := ff.Counter(counterPrefix+testCase.name, testCase.tags)
+			gauge := ff.Gauge(gaugePrefix+testCase.name, testCase.tags)
+			timer := ff.Timer(timerPrefix+testCase.name, testCase.tags)
 
 			// register second time, should not panic
-			ff.Counter(metrics.Options{
-				Name: counterPrefix + testCase.name,
-				Tags: testCase.tags,
-			})
-			ff.Gauge(metrics.Options{
-				Name: gaugePrefix + testCase.name,
-				Tags: testCase.tags,
-			})
-			ff.Timer(metrics.TimerOptions{
-				Name:    timerPrefix + testCase.name,
-				Tags:    testCase.tags,
-				Buckets: testCase.durationBuckets,
-			})
-			ff.Histogram(metrics.HistogramOptions{
-				Name:    histogramPrefix + testCase.name,
-				Tags:    testCase.tags,
-				Buckets: testCase.buckets,
-			})
+			ff.Counter(counterPrefix+testCase.name, testCase.tags)
+			ff.Gauge(gaugePrefix+testCase.name, testCase.tags)
+			ff.Timer(timerPrefix+testCase.name, testCase.tags)
 
 			counter.Inc(42)
 			gauge.Update(42)
 			timer.Record(42 * time.Millisecond)
-			histogram.Record(42)
 
 			assertExpvar(t, fmt.Sprintf(testCase.fullName, counterPrefix), testCase.expectedCounter)
 			assertExpvar(t, fmt.Sprintf(testCase.fullName, gaugePrefix), "42")
 			assertExpvar(t, fmt.Sprintf(testCase.fullName, timerPrefix)+".p99", "0.042")
-			assertExpvar(t, fmt.Sprintf(testCase.fullName, histogramPrefix)+".p99", "42")
 		})
 	}
 }

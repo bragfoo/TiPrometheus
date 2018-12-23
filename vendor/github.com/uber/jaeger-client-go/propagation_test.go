@@ -24,11 +24,12 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber/jaeger-lib/metrics/metricstest"
+	"github.com/uber/jaeger-lib/metrics"
+	"github.com/uber/jaeger-lib/metrics/testutils"
 )
 
-func initMetrics() (*metricstest.Factory, *Metrics) {
-	factory := metricstest.NewFactory(0)
+func initMetrics() (*metrics.LocalFactory, *Metrics) {
+	factory := metrics.NewLocalFactory(0)
 	return factory, NewMetrics(factory, nil)
 }
 
@@ -117,7 +118,7 @@ func TestSpanPropagator(t *testing.T) {
 		assert.Equal(t, exp, sp, formatName)
 	}
 
-	metricsFactory.AssertCounterMetrics(t, []metricstest.ExpectedMetric{
+	testutils.AssertCounterMetrics(t, metricsFactory, []testutils.ExpectedMetric{
 		{Name: "jaeger.started_spans", Tags: map[string]string{"sampled": "y"}, Value: 1 + 2*len(tests)},
 		{Name: "jaeger.finished_spans", Value: 1 + len(tests)},
 		{Name: "jaeger.traces", Tags: map[string]string{"state": "started", "sampled": "y"}, Value: 1},
@@ -150,7 +151,7 @@ func TestDecodingError(t *testing.T) {
 	_, err := tracer.Extract(opentracing.HTTPHeaders, tmc)
 	assert.Error(t, err)
 
-	metricsFactory.AssertCounterMetrics(t, metricstest.ExpectedMetric{Name: "jaeger.span_context_decoding_errors", Value: 1})
+	testutils.AssertCounterMetrics(t, metricsFactory, testutils.ExpectedMetric{Name: "jaeger.span_context_decoding_errors", Value: 1})
 }
 
 func TestBaggagePropagationHTTP(t *testing.T) {
@@ -211,8 +212,8 @@ func TestJaegerBaggageHeader(t *testing.T) {
 			assert.Equal(t, "value two", sp.BaggageItem("key 2"))
 
 			// ensure that traces.started counter is incremented, not traces.joined
-			metricsFactory.AssertCounterMetrics(t,
-				metricstest.ExpectedMetric{
+			testutils.AssertCounterMetrics(t, metricsFactory,
+				testutils.ExpectedMetric{
 					Name: "jaeger.traces", Tags: map[string]string{"state": "started", "sampled": "y"}, Value: 1,
 				},
 			)
@@ -284,8 +285,8 @@ func TestDebugCorrelationID(t *testing.T) {
 			assert.Equal(t, val, tag.value)
 
 			// ensure that traces.started counter is incremented, not traces.joined
-			metricsFactory.AssertCounterMetrics(t,
-				metricstest.ExpectedMetric{
+			testutils.AssertCounterMetrics(t, metricsFactory,
+				testutils.ExpectedMetric{
 					Name: "jaeger.traces", Tags: map[string]string{"state": "started", "sampled": "y"}, Value: 1,
 				},
 			)

@@ -28,7 +28,6 @@ import (
 	throttler "github.com/uber/jaeger-client-go/internal/throttler/remote"
 	"github.com/uber/jaeger-client-go/rpcmetrics"
 	"github.com/uber/jaeger-client-go/transport"
-	"github.com/uber/jaeger-lib/metrics"
 )
 
 const defaultSamplingProbability = 0.001
@@ -193,7 +192,7 @@ func (c Configuration) NewTracer(options ...Option) (opentracing.Tracer, io.Clos
 	if c.RPCMetrics {
 		Observer(
 			rpcmetrics.NewObserver(
-				opts.metrics.Namespace(metrics.NSOptions{Name: "jaeger-rpc", Tags: map[string]string{"component": "jaeger"}}),
+				opts.metrics.Namespace("jaeger-rpc", map[string]string{"component": "jaeger"}),
 				rpcmetrics.DefaultNameNormalizer,
 			),
 		)(&opts) // adds to c.observers

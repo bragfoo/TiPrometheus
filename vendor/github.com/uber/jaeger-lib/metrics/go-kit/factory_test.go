@@ -57,11 +57,9 @@ type metricFunc func(t *testing.T, testCase testCase, f metrics.Factory) (name f
 type testCase struct {
 	f Factory
 
-	prefix          string
-	name            string
-	tags            Tags
-	buckets         []float64
-	durationBuckets []time.Duration
+	prefix string
+	name   string
+	tags   Tags
 
 	useNamespace  bool
 	namespace     string
@@ -82,7 +80,6 @@ func TestFactoryScoping(t *testing.T) {
 		{"counter", testCounter},
 		{"gauge", testGauge},
 		{"timer", testTimer},
-		{"histogram", testHistogram},
 	}
 	for _, ts := range testSuites {
 		testSuite := ts // capture loop var
@@ -156,10 +153,7 @@ func TestFactoryScoping(t *testing.T) {
 			t.Run(factoryName+"_"+testSuite.metricType+"_"+testCase.expName, func(t *testing.T) {
 				f := Wrap(testCase.prefix, testCase.f, testCase.options...)
 				if testCase.useNamespace {
-					f = f.Namespace(metrics.NSOptions{
-						Name: testCase.namespace,
-						Tags: testCase.namespaceTags,
-					})
+					f = f.Namespace(testCase.namespace, testCase.namespaceTags)
 				}
 				name, labels := testSuite.metricFunc(t, testCase, f)
 				assert.Equal(t, testCase.expName, name())
@@ -172,10 +166,7 @@ func TestFactoryScoping(t *testing.T) {
 }
 
 func testCounter(t *testing.T, testCase testCase, f metrics.Factory) (name func() string, labels func() []string) {
-	c := f.Counter(metrics.Options{
-		Name: testCase.name,
-		Tags: testCase.tags,
-	})
+	c := f.Counter(testCase.name, testCase.tags)
 	c.Inc(123)
 	kc := c.(*Counter).counter
 	var gc *generic.Counter
@@ -191,10 +182,7 @@ func testCounter(t *testing.T, testCase testCase, f metrics.Factory) (name func(
 }
 
 func testGauge(t *testing.T, testCase testCase, f metrics.Factory) (name func() string, labels func() []string) {
-	g := f.Gauge(metrics.Options{
-		Name: testCase.name,
-		Tags: testCase.tags,
-	})
+	g := f.Gauge(testCase.name, testCase.tags)
 	g.Update(123)
 	gg := g.(*Gauge).gauge.(*generic.Gauge)
 	assert.EqualValues(t, 123.0, gg.Value())
@@ -204,28 +192,10 @@ func testGauge(t *testing.T, testCase testCase, f metrics.Factory) (name func() 
 }
 
 func testTimer(t *testing.T, testCase testCase, f metrics.Factory) (name func() string, labels func() []string) {
-	tm := f.Timer(metrics.TimerOptions{
-		Name:    testCase.name,
-		Tags:    testCase.tags,
-		Buckets: testCase.durationBuckets,
-	})
+	tm := f.Timer(testCase.name, testCase.tags)
 	tm.Record(123 * time.Millisecond)
 	gt := tm.(*Timer).hist.(*generic.Histogram)
 	assert.InDelta(t, 0.123, gt.Quantile(0.9), 0.00001)
-	name = func() string { return gt.Name }
-	labels = gt.LabelValues
-	return
-}
-
-func testHistogram(t *testing.T, testCase testCase, f metrics.Factory) (name func() string, labels func() []string) {
-	histogram := f.Histogram(metrics.HistogramOptions{
-		Name:    testCase.name,
-		Tags:    testCase.tags,
-		Buckets: testCase.buckets,
-	})
-	histogram.Record(123)
-	gt := histogram.(*Histogram).hist.(*generic.Histogram)
-	assert.InDelta(t, 123, gt.Quantile(0.9), 0.00001)
 	name = func() string { return gt.Name }
 	labels = gt.LabelValues
 	return

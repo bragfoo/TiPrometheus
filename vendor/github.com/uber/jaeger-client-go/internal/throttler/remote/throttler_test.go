@@ -30,7 +30,8 @@ import (
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/internal/throttler"
 	"github.com/uber/jaeger-client-go/log"
-	"github.com/uber/jaeger-lib/metrics/metricstest"
+	"github.com/uber/jaeger-lib/metrics"
+	"github.com/uber/jaeger-lib/metrics/testutils"
 )
 
 var _ throttler.Throttler = &Throttler{}
@@ -90,12 +91,12 @@ func withHTTPServer(
 	credits float64,
 	f func(
 		m *jaeger.Metrics,
-		factory *metricstest.Factory,
+		factory *metrics.LocalFactory,
 		handler *creditHandler,
 		server *httptest.Server,
 	),
 ) {
-	factory := metricstest.NewFactory(0)
+	factory := metrics.NewLocalFactory(0)
 	m := jaeger.NewMetrics(factory, nil)
 
 	handler := &creditHandler{returnError: false, credits: credits}
@@ -119,7 +120,7 @@ func TestCreditManager(t *testing.T) {
 		2,
 		func(
 			m *jaeger.Metrics,
-			factory *metricstest.Factory,
+			factory *metrics.LocalFactory,
 			handler *creditHandler,
 			server *httptest.Server,
 		) {
@@ -148,7 +149,7 @@ func TestRemoteThrottler_fetchCreditsErrors(t *testing.T) {
 		2,
 		func(
 			m *jaeger.Metrics,
-			factory *metricstest.Factory,
+			factory *metrics.LocalFactory,
 			handler *creditHandler,
 			server *httptest.Server,
 		) {
@@ -183,8 +184,8 @@ func TestRemoteThrottler_fetchCreditsErrors(t *testing.T) {
 			throttler.refreshCredits()
 			assert.Equal(t, "ERROR: Failed to fetch credits: Failed to receive credits from agent: StatusCode: 500, Body: \n", logger.String())
 
-			factory.AssertCounterMetrics(t,
-				metricstest.ExpectedMetric{
+			testutils.AssertCounterMetrics(t, factory,
+				testutils.ExpectedMetric{
 					Name:  "jaeger.throttler_updates",
 					Tags:  map[string]string{"result": "err"},
 					Value: 1,
@@ -197,7 +198,7 @@ func TestRemotelyControlledThrottler_pollManager(t *testing.T) {
 		2,
 		func(
 			m *jaeger.Metrics,
-			factory *metricstest.Factory,
+			factory *metrics.LocalFactory,
 			handler *creditHandler,
 			server *httptest.Server,
 		) {
@@ -229,7 +230,7 @@ func TestRemotelyControlledThrottler_asynchronousInitialization(t *testing.T) {
 		2,
 		func(
 			m *jaeger.Metrics,
-			factory *metricstest.Factory,
+			factory *metrics.LocalFactory,
 			handler *creditHandler,
 			server *httptest.Server,
 		) {

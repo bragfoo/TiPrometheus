@@ -25,7 +25,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber/jaeger-lib/metrics/metricstest"
+	"github.com/uber/jaeger-lib/metrics"
+	mTestutils "github.com/uber/jaeger-lib/metrics/testutils"
 
 	"github.com/uber/jaeger-client-go/log"
 	"github.com/uber/jaeger-client-go/testutils"
@@ -284,11 +285,11 @@ func TestAdaptiveSamplerUpdate(t *testing.T) {
 	assert.Len(t, sampler.samplers, 2)
 }
 
-func initAgent(t *testing.T) (*testutils.MockAgent, *RemotelyControlledSampler, *metricstest.Factory) {
+func initAgent(t *testing.T) (*testutils.MockAgent, *RemotelyControlledSampler, *metrics.LocalFactory) {
 	agent, err := testutils.StartMockAgent()
 	require.NoError(t, err)
 
-	metricsFactory := metricstest.NewFactory(0)
+	metricsFactory := metrics.NewLocalFactory(0)
 	metrics := NewMetrics(metricsFactory, nil)
 
 	initialSampler, _ := NewProbabilisticSampler(0.001)
@@ -316,7 +317,7 @@ func TestRemotelyControlledSampler(t *testing.T) {
 	agent.AddSamplingStrategy("client app",
 		getSamplingStrategyResponse(sampling.SamplingStrategyType_PROBABILISTIC, testDefaultSamplingProbability))
 	remoteSampler.updateSampler()
-	metricsFactory.AssertCounterMetrics(t, []metricstest.ExpectedMetric{
+	mTestutils.AssertCounterMetrics(t, metricsFactory, []mTestutils.ExpectedMetric{
 		{Name: "jaeger.sampler_queries", Tags: map[string]string{"result": "ok"}, Value: 1},
 		{Name: "jaeger.sampler_updates", Tags: map[string]string{"result": "ok"}, Value: 1},
 	}...)
@@ -426,8 +427,8 @@ func TestRemotelyControlledSampler_updateSampler(t *testing.T) {
 			agent.AddSamplingStrategy("client app", res)
 			sampler.updateSampler()
 
-			metricsFactory.AssertCounterMetrics(t,
-				metricstest.ExpectedMetric{
+			mTestutils.AssertCounterMetrics(t, metricsFactory,
+				mTestutils.ExpectedMetric{
 					Name: "jaeger.sampler_updates", Tags: map[string]string{"result": "ok"}, Value: 1,
 				},
 			)
@@ -484,8 +485,8 @@ func TestSamplerQueryError(t *testing.T) {
 	sampler.updateSampler()
 	assert.Equal(t, initSampler, sampler.sampler, "Sampler should not have been updated due to query error")
 
-	metricsFactory.AssertCounterMetrics(t,
-		metricstest.ExpectedMetric{Name: "jaeger.sampler_queries", Tags: map[string]string{"result": "err"}, Value: 1},
+	mTestutils.AssertCounterMetrics(t, metricsFactory,
+		mTestutils.ExpectedMetric{Name: "jaeger.sampler_queries", Tags: map[string]string{"result": "err"}, Value: 1},
 	)
 }
 
@@ -537,9 +538,9 @@ func TestRemotelyControlledSampler_updateSamplerFromAdaptiveSampler(t *testing.T
 	agent.AddSamplingStrategy("client app", &sampling.SamplingStrategyResponse{OperationSampling: strategies})
 	remoteSampler.updateSampler()
 
-	metricsFactory.AssertCounterMetrics(t,
-		metricstest.ExpectedMetric{Name: "jaeger.sampler_queries", Tags: map[string]string{"result": "ok"}, Value: 3},
-		metricstest.ExpectedMetric{Name: "jaeger.sampler_updates", Tags: map[string]string{"result": "ok"}, Value: 3},
+	mTestutils.AssertCounterMetrics(t, metricsFactory,
+		mTestutils.ExpectedMetric{Name: "jaeger.sampler_queries", Tags: map[string]string{"result": "ok"}, Value: 3},
+		mTestutils.ExpectedMetric{Name: "jaeger.sampler_updates", Tags: map[string]string{"result": "ok"}, Value: 3},
 	)
 }
 

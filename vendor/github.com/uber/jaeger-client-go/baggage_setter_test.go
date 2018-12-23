@@ -20,13 +20,14 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber/jaeger-lib/metrics/metricstest"
+	"github.com/uber/jaeger-lib/metrics"
+	"github.com/uber/jaeger-lib/metrics/testutils"
 
 	"github.com/uber/jaeger-client-go/internal/baggage"
 )
 
-func withTracerAndMetrics(f func(tracer *Tracer, metrics *Metrics, factory *metricstest.Factory)) {
-	factory := metricstest.NewFactory(0)
+func withTracerAndMetrics(f func(tracer *Tracer, metrics *Metrics, factory *metrics.LocalFactory)) {
+	factory := metrics.NewLocalFactory(0)
 	m := NewMetrics(factory, nil)
 
 	service := "DOOP"
@@ -36,7 +37,7 @@ func withTracerAndMetrics(f func(tracer *Tracer, metrics *Metrics, factory *metr
 }
 
 func TestTruncateBaggage(t *testing.T) {
-	withTracerAndMetrics(func(tracer *Tracer, metrics *Metrics, factory *metricstest.Factory) {
+	withTracerAndMetrics(func(tracer *Tracer, metrics *Metrics, factory *metrics.LocalFactory) {
 		setter := newBaggageSetter(baggage.NewDefaultRestrictionManager(5), metrics)
 		key := "key"
 		value := "01234567890"
@@ -50,12 +51,12 @@ func TestTruncateBaggage(t *testing.T) {
 		assertBaggageFields(t, span, key, expected, true, true, false)
 		assert.Equal(t, expected, span.context.baggage[key])
 
-		factory.AssertCounterMetrics(t,
-			metricstest.ExpectedMetric{
+		testutils.AssertCounterMetrics(t, factory,
+			testutils.ExpectedMetric{
 				Name:  "jaeger.baggage_truncations",
 				Value: 1,
 			},
-			metricstest.ExpectedMetric{
+			testutils.ExpectedMetric{
 				Name:  "jaeger.baggage_updates",
 				Tags:  map[string]string{"result": "ok"},
 				Value: 1,
@@ -71,7 +72,7 @@ func (m *keyNotAllowedBaggageRestrictionManager) GetRestriction(service, key str
 }
 
 func TestInvalidBaggage(t *testing.T) {
-	withTracerAndMetrics(func(tracer *Tracer, metrics *Metrics, factory *metricstest.Factory) {
+	withTracerAndMetrics(func(tracer *Tracer, metrics *Metrics, factory *metrics.LocalFactory) {
 		setter := newBaggageSetter(&keyNotAllowedBaggageRestrictionManager{}, metrics)
 		key := "key"
 		value := "value"
@@ -82,8 +83,8 @@ func TestInvalidBaggage(t *testing.T) {
 		assertBaggageFields(t, span, key, value, false, false, true)
 		assert.Empty(t, span.context.baggage[key])
 
-		factory.AssertCounterMetrics(t,
-			metricstest.ExpectedMetric{
+		testutils.AssertCounterMetrics(t, factory,
+			testutils.ExpectedMetric{
 				Name:  "jaeger.baggage_updates",
 				Tags:  map[string]string{"result": "err"},
 				Value: 1,
@@ -93,7 +94,7 @@ func TestInvalidBaggage(t *testing.T) {
 }
 
 func TestNotSampled(t *testing.T) {
-	withTracerAndMetrics(func(_ *Tracer, metrics *Metrics, factory *metricstest.Factory) {
+	withTracerAndMetrics(func(_ *Tracer, metrics *Metrics, factory *metrics.LocalFactory) {
 		tracer, closer := NewTracer("svc", NewConstSampler(false), NewNullReporter())
 		defer closer.Close()
 

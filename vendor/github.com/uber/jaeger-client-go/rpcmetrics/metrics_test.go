@@ -18,7 +18,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/uber/jaeger-lib/metrics/metricstest"
+	"github.com/uber/jaeger-lib/metrics"
+	"github.com/uber/jaeger-lib/metrics/testutils"
 )
 
 // E.g. tags("key", "value", "key", "value")
@@ -35,7 +36,7 @@ func endpointTags(endpoint string, kv ...string) map[string]string {
 }
 
 func TestMetricsByEndpoint(t *testing.T) {
-	met := metricstest.NewFactory(0)
+	met := metrics.NewLocalFactory(0)
 	mbe := newMetricsByEndpoint(met, DefaultNameNormalizer, 2)
 
 	m1 := mbe.get("abc1")
@@ -52,9 +53,9 @@ func TestMetricsByEndpoint(t *testing.T) {
 		m.RequestCountSuccess.Inc(1)
 	}
 
-	met.AssertCounterMetrics(t,
-		metricstest.ExpectedMetric{Name: "requests", Tags: endpointTags("abc1", "error", "false"), Value: 3},
-		metricstest.ExpectedMetric{Name: "requests", Tags: endpointTags("abc3", "error", "false"), Value: 1},
-		metricstest.ExpectedMetric{Name: "requests", Tags: endpointTags("other", "error", "false"), Value: 2},
+	testutils.AssertCounterMetrics(t, met,
+		testutils.ExpectedMetric{Name: "requests", Tags: endpointTags("abc1", "error", "false"), Value: 3},
+		testutils.ExpectedMetric{Name: "requests", Tags: endpointTags("abc3", "error", "false"), Value: 1},
+		testutils.ExpectedMetric{Name: "requests", Tags: endpointTags("other", "error", "false"), Value: 2},
 	)
 }

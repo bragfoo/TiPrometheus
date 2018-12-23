@@ -32,41 +32,32 @@ type factory struct {
 	tally tally.Scope
 }
 
-func (f *factory) Counter(options metrics.Options) metrics.Counter {
+func (f *factory) Counter(name string, tags map[string]string) metrics.Counter {
 	scope := f.tally
-	if len(options.Tags) > 0 {
-		scope = scope.Tagged(options.Tags)
+	if len(tags) > 0 {
+		scope = scope.Tagged(tags)
 	}
-	return NewCounter(scope.Counter(options.Name))
+	return NewCounter(scope.Counter(name))
 }
 
-func (f *factory) Gauge(options metrics.Options) metrics.Gauge {
+func (f *factory) Gauge(name string, tags map[string]string) metrics.Gauge {
 	scope := f.tally
-	if len(options.Tags) > 0 {
-		scope = scope.Tagged(options.Tags)
+	if len(tags) > 0 {
+		scope = scope.Tagged(tags)
 	}
-	return NewGauge(scope.Gauge(options.Name))
+	return NewGauge(scope.Gauge(name))
 }
 
-func (f *factory) Timer(options metrics.TimerOptions) metrics.Timer {
+func (f *factory) Timer(name string, tags map[string]string) metrics.Timer {
 	scope := f.tally
-	if len(options.Tags) > 0 {
-		scope = scope.Tagged(options.Tags)
+	if len(tags) > 0 {
+		scope = scope.Tagged(tags)
 	}
-	// TODO: Determine whether buckets can be used
-	return NewTimer(scope.Timer(options.Name))
+	return NewTimer(scope.Timer(name))
 }
 
-func (f *factory) Histogram(options metrics.HistogramOptions) metrics.Histogram {
-	scope := f.tally
-	if len(options.Tags) > 0 {
-		scope = scope.Tagged(options.Tags)
-	}
-	return NewHistogram(scope.Histogram(options.Name, tally.ValueBuckets(options.Buckets)))
-}
-
-func (f *factory) Namespace(scope metrics.NSOptions) metrics.Factory {
+func (f *factory) Namespace(name string, tags map[string]string) metrics.Factory {
 	return &factory{
-		tally: f.tally.SubScope(scope.Name).Tagged(scope.Tags),
+		tally: f.tally.SubScope(name).Tagged(tags),
 	}
 }

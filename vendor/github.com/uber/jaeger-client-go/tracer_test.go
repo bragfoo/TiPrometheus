@@ -25,7 +25,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/uber/jaeger-lib/metrics/metricstest"
+	"github.com/uber/jaeger-lib/metrics"
+	"github.com/uber/jaeger-lib/metrics/testutils"
 
 	"github.com/uber/jaeger-client-go/internal/baggage"
 	"github.com/uber/jaeger-client-go/log"
@@ -36,11 +37,11 @@ type tracerSuite struct {
 	suite.Suite
 	tracer         opentracing.Tracer
 	closer         io.Closer
-	metricsFactory *metricstest.Factory
+	metricsFactory *metrics.LocalFactory
 }
 
 func (s *tracerSuite) SetupTest() {
-	s.metricsFactory = metricstest.NewFactory(0)
+	s.metricsFactory = metrics.NewLocalFactory(0)
 	metrics := NewMetrics(s.metricsFactory, nil)
 
 	s.tracer, s.closer = NewTracer("DOOP", // respect the classics, man!
@@ -90,7 +91,7 @@ func (s *tracerSuite) TestBeginRootSpan() {
 	sp.Finish()
 	s.NotNil(ss.duration)
 
-	s.metricsFactory.AssertCounterMetrics(s.T(), []metricstest.ExpectedMetric{
+	testutils.AssertCounterMetrics(s.T(), s.metricsFactory, []testutils.ExpectedMetric{
 		{Name: "jaeger.finished_spans", Value: 1},
 		{Name: "jaeger.started_spans", Tags: map[string]string{"sampled": "y"}, Value: 1},
 		{Name: "jaeger.traces", Tags: map[string]string{"sampled": "y", "state": "started"}, Value: 1},
@@ -113,7 +114,7 @@ func (s *tracerSuite) TestStartChildSpan() {
 	sp2.Finish()
 	s.NotNil(sp2.(*Span).duration)
 	sp1.Finish()
-	s.metricsFactory.AssertCounterMetrics(s.T(), []metricstest.ExpectedMetric{
+	testutils.AssertCounterMetrics(s.T(), s.metricsFactory, []testutils.ExpectedMetric{
 		{Name: "jaeger.started_spans", Tags: map[string]string{"sampled": "y"}, Value: 2},
 		{Name: "jaeger.traces", Tags: map[string]string{"sampled": "y", "state": "started"}, Value: 1},
 		{Name: "jaeger.finished_spans", Value: 2},
@@ -144,7 +145,7 @@ func (s *tracerSuite) TestStartSpanWithMultipleReferences() {
 	sp3.Finish()
 	sp2.Finish()
 	sp1.Finish()
-	s.metricsFactory.AssertCounterMetrics(s.T(), []metricstest.ExpectedMetric{
+	testutils.AssertCounterMetrics(s.T(), s.metricsFactory, []testutils.ExpectedMetric{
 		{Name: "jaeger.started_spans", Tags: map[string]string{"sampled": "y"}, Value: 4},
 		{Name: "jaeger.traces", Tags: map[string]string{"sampled": "y", "state": "started"}, Value: 3},
 		{Name: "jaeger.finished_spans", Value: 4},
@@ -164,7 +165,7 @@ func (s *tracerSuite) TestStartSpanWithOnlyFollowFromReference() {
 	sp2.Finish()
 	s.NotNil(sp2.(*Span).duration)
 	sp1.Finish()
-	s.metricsFactory.AssertCounterMetrics(s.T(), []metricstest.ExpectedMetric{
+	testutils.AssertCounterMetrics(s.T(), s.metricsFactory, []testutils.ExpectedMetric{
 		{Name: "jaeger.started_spans", Tags: map[string]string{"sampled": "y"}, Value: 2},
 		{Name: "jaeger.traces", Tags: map[string]string{"sampled": "y", "state": "started"}, Value: 1},
 		{Name: "jaeger.finished_spans", Value: 2},
@@ -194,7 +195,7 @@ func (s *tracerSuite) TestTraceStartedOrJoinedMetrics() {
 		s.Equal(test.sampled, sp1.Context().(SpanContext).IsSampled())
 		s.Equal(test.sampled, sp2.Context().(SpanContext).IsSampled())
 
-		s.metricsFactory.AssertCounterMetrics(s.T(), []metricstest.ExpectedMetric{
+		testutils.AssertCounterMetrics(s.T(), s.metricsFactory, []testutils.ExpectedMetric{
 			{Name: "jaeger.started_spans", Tags: map[string]string{"sampled": test.label}, Value: 3},
 			{Name: "jaeger.finished_spans", Value: 3},
 			{Name: "jaeger.traces", Tags: map[string]string{"sampled": test.label, "state": "started"}, Value: 1},
