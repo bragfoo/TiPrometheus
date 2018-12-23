@@ -3,9 +3,15 @@ package lib
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
+	"go.uber.org/zap/buffer"
 	"strconv"
+)
+
+var (
+	buffers = buffer.NewPool()
 )
 
 func GetBytes(key interface{}) []byte {
@@ -25,4 +31,28 @@ func MakeMDByByte(initByte []byte) string {
 	md := m.Sum(nil)
 	mdString := hex.EncodeToString(md)
 	return mdString
+}
+
+func Int64WriteBytes(i int64) []byte {
+	buf := buffers.Get()
+	defer buf.Free()
+	binary.Write(buf, binary.BigEndian, i)
+	b := buf.Bytes()
+	return b
+}
+
+func ReadFixedLength(step int, bts []byte) []string {
+	var buf []string
+	for i := 0; i < len(bts); i += step {
+		buf = append(buf, string(bts[i:i+step]))
+	}
+	return buf
+}
+
+func ReadFixdString(step int, str string) []string {
+	var buf []string
+	for i := 0; i < len(str); i += step {
+		buf = append(buf, str[i:i+step])
+	}
+	return buf
 }
