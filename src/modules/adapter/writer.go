@@ -21,7 +21,7 @@ func RemoteWriter(data prompb.WriteRequest) {
 	for _, oneDoc := range data.Timeseries {
 		labels := oneDoc.Labels
 		samples := oneDoc.Samples
-		//log.Println("Naive write data:", labels, samples)
+		log.Println("Naive write data:", labels, samples)
 
 		//build index and return labelID
 		labelID := buildIndex(labels, samples)
@@ -84,7 +84,6 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 				tikv.Puts([]byte(key), []byte(labelID))
 			} else {
 				b := bytes.NewBufferString(oldKey.Value)
-				b.WriteString(",")
 				b.WriteString(labelID)
 				v := b.Bytes()
 				tikv.Puts([]byte(key), v)
@@ -111,13 +110,12 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	//timeseries index
 	for _, v := range samples {
 		oldKey, _ := tikv.Get(timeIndexBytes)
-		log.Println("Timeseries indexStatus:", oldKey)
+		//log.Println("Timeseries indexStatus:", oldKey)
 		if oldKey.Value == "" {
 			tikv.Puts(timeIndexBytes, lib.Int64ToBytes(v.Timestamp))
 		} else {
 			bs := buffers.Get()
 			bs.AppendString(oldKey.Value)
-			bs.AppendString(",")
 			bs.AppendString(strconv.FormatInt(v.Timestamp, 10))
 			v := bs.Bytes()
 			tikv.Puts(timeIndexBytes, v)
@@ -138,6 +136,7 @@ func writeTimeseriesData(labelID string, samples []*prompb.Sample) {
 		buf.AppendString(":")
 		buf.AppendString(strconv.FormatInt(v.Timestamp, 10))
 		key := buf.Bytes()
+		
 		//write to tikv
 		tikv.Puts(key, []byte(strconv.FormatFloat(v.Value, 'E', -1, 64)))
 		//log.Println("Write timeseries:", string(key), strconv.FormatFloat(v.Value, 'E', -1, 64))

@@ -3,6 +3,7 @@ package adapter
 import (
 	"bytes"
 	"encoding/gob"
+	"github.com/bragfoo/TiPrometheus/src/lib"
 	"github.com/bragfoo/TiPrometheus/src/modules/conf"
 	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
 	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
@@ -10,7 +11,6 @@ import (
 	"log"
 	"math"
 	"strconv"
-	"strings"
 )
 
 var (
@@ -70,16 +70,16 @@ func getTiemEndpointList(startTimeCompute, endTimeCompute, interval int64) []int
 			break
 		}
 	}
-	log.Println("Time endpoint list:", tiemEndpointList)
+	//log.Println("Time endpoint list:", tiemEndpointList)
 	return tiemEndpointList
 }
 
 func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) []*prompb.TimeSeries {
-	buffer := pool.Get()
-	defer buffer.Free()
+	buf := pool.Get()
+	defer buf.Free()
 
 	//get count map
-	countMap := getCountMap(matchers, buffer)
+	countMap := getCountMap(matchers)
 
 	var docTimeseries []*prompb.TimeSeries
 
@@ -89,17 +89,18 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 			//log.Println("Find intersection key md:", md)
 
 			//get labels info
-			buffer.AppendString("doc:")
-			buffer.AppendString(md)
-			labelInfoKey := buffer.Bytes()
+			buf.AppendString("doc:")
+			buf.AppendString(md)
+			labelInfoKey := buf.Bytes()
 			labelInfoKV, _ := tikv.Get([]byte(labelInfoKey))
-			buffer.Reset()
+			buf.Reset()
 
 			//get labels
 			labels := makeLabels([]byte(labelInfoKV.Value))
 
 			//get timeseries list
-			timeList := getTimeList(md, tiemEndpointList)
+			timeListString := getTimeList(md, tiemEndpointList)
+			timeList := lib.ReadStringByStepwidth(13, timeListString)
 
 			//get values
 			values := getValues(timeList, md)
@@ -117,21 +118,24 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 	return docTimeseries
 }
 
-func getCountMap(matchers []*prompb.LabelMatcher, buffer *buffer.Buffer) map[string]int {
+func getCountMap(matchers []*prompb.LabelMatcher) map[string]int {
+	buf := pool.Get()
+	defer buf.Free()
+
 	countMap := make(map[string]int)
 	for _, queryLabel := range matchers {
 		//newLabel
-		buffer.AppendString("index:label:")
-		buffer.AppendString(queryLabel.Name)
-		buffer.AppendString("#")
-		buffer.AppendString(queryLabel.Value)
-		newLabel := buffer.String()
-		buffer.Reset()
+		buf.AppendString("index:label:")
+		buf.AppendString(queryLabel.Name)
+		buf.AppendString("#")
+		buf.AppendString(queryLabel.Value)
+		newLabel := buf.String()
+		buf.Reset()
 
 		//get label index list
 		//key type index:label:newLabel
 		newLabelValue, _ := tikv.Get([]byte(newLabel))
-		mdList := strings.Split(newLabelValue.Value, ",")
+		mdList := lib.ReadStringByStepwidth(32, newLabelValue.Value)
 
 		//mark count
 		for _, oneMD := range mdList {
@@ -139,9 +143,10 @@ func getCountMap(matchers []*prompb.LabelMatcher, buffer *buffer.Buffer) map[str
 			newCount := oldCount + 1
 			countMap[oneMD] = newCount
 		}
+
 	}
 
-	log.Println("Count Map:", countMap)
+	//log.Println("Count Map:", countMap)
 	return countMap
 }
 
@@ -157,22 +162,31 @@ func makeLabels(labelInfoByte []byte) []*prompb.Label {
 	return labels
 }
 
-func getTimeList(md string, tiemEndpointList []int64) []string {
-	var timeList []string
+func getTimeList(md string, tiemEndpointList []int64) string {
+	buf := pool.Get()
+	defer buf.Free()
+
+	var timeList string
 	//key type index:timeseries:5d4decf2a1d0dd0151cd893cfc752af4:1543639500000
 	for _, oneTimeEndpoint := range tiemEndpointList {
-		buffer := bytes.NewBufferString("index:timeseries:")
-		buffer.WriteString(md)
-		buffer.WriteString(":")
-		buffer.WriteString(strconv.FormatInt(oneTimeEndpoint, 10))
-		timeIndexBytes := buffer.Bytes()
+		buf.AppendString("index:timeseries:")
+		buf.AppendString(md)
+		buf.AppendString(":")
+		buf.AppendString(strconv.FormatInt(oneTimeEndpoint, 10))
+		timeIndexBytes := buf.Bytes()
+		buf.Reset()
 		newLabelValue, _ := tikv.Get(timeIndexBytes)
+		//log.Println("One time endpoint list:", newLabelValue.Value)
+
 		if newLabelValue.Value != "" {
-			timeList = append(timeList, strings.Split(newLabelValue.Value, ",")...)
+			//split with ,
+			//timeList = append(timeList, strings.Split(newLabelValue.Value, ",")...)
+			timeList = timeList + newLabelValue.Value
 		}
+
 	}
 
-	log.Println("Time list:", timeList)
+	//log.Println("Time list:", timeList)
 	return timeList
 }
 
@@ -203,15 +217,15 @@ func getValues(timeList []string, md string) []*prompb.Sample {
 }
 
 func getTimePointValue(oneTimePoint, md string, bvChan chan prompb.Sample) {
-	buffer := pool.Get()
+	buf := pool.Get()
 	//key type timeseries:doc:5d4decf2a1d0dd0151cd893cfc752af4:1543639730686
-	buffer.AppendString("timeseries:doc:")
-	buffer.AppendString(md)
-	buffer.AppendString(":")
-	buffer.AppendString(oneTimePoint)
-	key := buffer.Bytes()
+	buf.AppendString("timeseries:doc:")
+	buf.AppendString(md)
+	buf.AppendString(":")
+	buf.AppendString(oneTimePoint)
+	key := buf.Bytes()
 	oneTimePointValue, _ := tikv.Get([]byte(key))
-	buffer.Free()
+	buf.Free()
 	//log.Println("One doc:", oneTimeseriesValue)
 
 	oneTimePointValueFloat, _ := strconv.ParseFloat(oneTimePointValue.Value, 64)

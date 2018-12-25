@@ -41,18 +41,18 @@ func MakeMDByByte(initByte []byte) string {
 	return mdString
 }
 
-func ReadFixedLength(step int, bts []byte) []string {
+func ReadStringByStepwidth(step int, str string) []string {
 	var buf []string
-	for i := 0; i < len(bts); i += step {
-		buf = append(buf, string(bts[i:i+step]))
+	for i := 0; i < len(str); i += step {
+		buf = append(buf, str[i:i+step])
 	}
 	return buf
 }
 
-func ReadFixdString(step int, str string) []string {
+func ReadFixedLength(step int, bts []byte) []string {
 	var buf []string
-	for i := 0; i < len(str); i += step {
-		buf = append(buf, str[i:i+step])
+	for i := 0; i < len(bts); i += step {
+		buf = append(buf, string(bts[i:i+step]))
 	}
 	return buf
 }
