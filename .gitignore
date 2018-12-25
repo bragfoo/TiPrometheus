@@ -109,7 +109,5 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-
 # Config file
-
 src/conf/conf.toml
