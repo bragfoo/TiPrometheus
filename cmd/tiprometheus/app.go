@@ -7,9 +7,9 @@ import (
 	"os"
 )
 
-// RunTime=dev go run app.go -conf "./conf/conf.toml"
+// RunTime=dev go run app.go -conf "./conf.toml"
 
-var confPath = flag.String("conf", "./conf/conf.toml", "The conf path.")
+var confPath = flag.String("conf", "./conf.toml", "The configuration file name.")
 
 func main() {
 	flag.Parse()
