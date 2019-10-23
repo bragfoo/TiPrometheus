@@ -3,10 +3,10 @@ package adapter
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/bragfoo/TiPrometheus/pkg/lib"
 	"github.com/bragfoo/TiPrometheus/pkg/conf"
-	"github.com/prometheus/prometheus/prompb"
+	"github.com/bragfoo/TiPrometheus/pkg/lib"
 	"github.com/bragfoo/TiPrometheus/pkg/tikv"
+	"github.com/prometheus/prometheus/prompb"
 	"go.uber.org/zap/buffer"
 	"log"
 	"math"

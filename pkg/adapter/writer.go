@@ -1,14 +1,14 @@
 package adapter
 
 import (
-	"github.com/bragfoo/TiPrometheus/pkg/lib"
 	"github.com/bragfoo/TiPrometheus/pkg/conf"
+	"github.com/bragfoo/TiPrometheus/pkg/lib"
 	"log"
 	"strconv"
 
 	"bytes"
-	"github.com/prometheus/prometheus/prompb"
 	"github.com/bragfoo/TiPrometheus/pkg/tikv"
+	"github.com/prometheus/prometheus/prompb"
 	"go.uber.org/zap/buffer"
 	"time"
 )
@@ -136,7 +136,7 @@ func writeTimeseriesData(labelID string, samples []prompb.Sample) {
 		buf.AppendString(":")
 		buf.AppendString(strconv.FormatInt(v.Timestamp, 10))
 		key := buf.Bytes()
-		
+
 		//write to tikv
 		tikv.Puts(key, []byte(strconv.FormatFloat(v.Value, 'E', -1, 64)))
 		//log.Println("Write timeseries:", string(key), strconv.FormatFloat(v.Value, 'E', -1, 64))
