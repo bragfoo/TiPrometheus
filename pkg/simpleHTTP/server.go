@@ -28,7 +28,7 @@ func Server(endpoint string) {
 func ServerTLS(endpoint string, caCertFile string, certFile string, keyFile string) {
 	// create a muxer and register the handlers
 	mux := http.NewServeMux()
-	mux.HandleFunc("/write", RemoteWrtie)
+	mux.HandleFunc("/write", RemoteWrite)
 	mux.HandleFunc("/read", RemoteRead)
 
 	// configure our server
