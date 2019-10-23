@@ -160,8 +160,8 @@ github.com/twinj/uuid v0.1.0/go.mod h1:mMgcE1RHFUFqe5AfiwlINXisXfDGro23fWdPUfOMj
 github.com/uber/jaeger-client-go v2.8.0+incompatible h1:7DGH8Hqk6PirD+GE+bvCf0cLnspLuae7N1NcwMeQcyg=
 github.com/uber/jaeger-client-go v2.8.0+incompatible/go.mod h1:WVhlPFC8FDjOFMMWRy2pZqQJSXxYSwNYOkTr/Z6d3Kk=
 github.com/uber/jaeger-lib v1.1.0/go.mod h1:ComeNDZlWwrWnDv8aPp0Ba6+uUTzImX/AauajbLI56U=
-github.com/uber/jaeger-lib v1.5.0+incompatible h1:QsjOHVbRaYpt001rdkD/nNjuaSTWI+oxlMUJUIZmzR4=
-github.com/uber/jaeger-lib v1.5.0+incompatible/go.mod h1:ComeNDZlWwrWnDv8aPp0Ba6+uUTzImX/AauajbLI56U=
+github.com/uber/jaeger-lib v1.5.0 h1:OHbgr8l656Ub3Fw5k9SWnBfIEwvoHQ+W2y+Aa9D1Uyo=
+github.com/uber/jaeger-lib v1.5.0/go.mod h1:ComeNDZlWwrWnDv8aPp0Ba6+uUTzImX/AauajbLI56U=
 github.com/ugorji/go v1.1.1 h1:gmervu+jDMvXTbcHQ0pd2wee85nEoE0BsVyEuzkfK8w=
 github.com/ugorji/go v1.1.1/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=
 github.com/unrolled/render v0.0.0-20171102162132-65450fb6b2d3 h1:ZsIlNwu/G0zbChIZaWOeZ2TPGNmKMt46jZLXi3e8LFc=

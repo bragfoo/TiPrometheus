@@ -25,7 +25,7 @@ require (
 	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72 // indirect
 	github.com/twinj/uuid v0.1.0 // indirect
-	github.com/uber/jaeger-lib v1.5.0+incompatible // indirect
+	github.com/uber/jaeger-lib v1.5.0 // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/net v0.0.0-20181220203305-927f97764cc3 // indirect
