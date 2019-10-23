@@ -1,8 +1,8 @@
 package simpleHTTP
 
 import (
-	"github.com/bragfoo/TiPrometheus/src/modules/adapter"
-	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
+	"github.com/bragfoo/TiPrometheus/pkg/adapter"
+	"github.com/prometheus/prometheus/prompb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	"io/ioutil"

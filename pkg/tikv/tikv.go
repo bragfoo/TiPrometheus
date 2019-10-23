@@ -1,7 +1,7 @@
 package tikv
 
 import (
-	"github.com/bragfoo/TiPrometheus/src/modules/conf"
+	"github.com/bragfoo/TiPrometheus/pkg/conf"
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/store/tikv"
 	"log"

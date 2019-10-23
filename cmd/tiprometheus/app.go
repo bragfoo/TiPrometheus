@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/bragfoo/TiPrometheus/src/modules/process"
-	"github.com/bragfoo/TiPrometheus/src/modules/simpleHTTP"
+	"github.com/bragfoo/TiPrometheus/pkg/process"
+	"github.com/bragfoo/TiPrometheus/pkg/simpleHTTP"
 	"os"
 )
 

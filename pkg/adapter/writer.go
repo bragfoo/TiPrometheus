@@ -1,14 +1,14 @@
 package adapter
 
 import (
-	"github.com/bragfoo/TiPrometheus/src/lib"
-	"github.com/bragfoo/TiPrometheus/src/modules/conf"
+	"github.com/bragfoo/TiPrometheus/pkg/lib"
+	"github.com/bragfoo/TiPrometheus/pkg/conf"
 	"log"
 	"strconv"
 
 	"bytes"
-	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
-	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
+	"github.com/prometheus/prometheus/prompb"
+	"github.com/bragfoo/TiPrometheus/pkg/tikv"
 	"go.uber.org/zap/buffer"
 	"time"
 )
@@ -36,7 +36,7 @@ func RemoteWriter(data prompb.WriteRequest) {
 }
 
 //build md5 data and store to kv if not exist
-func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
+func buildIndex(labels []*prompb.Label, samples []prompb.Sample) string {
 	//make md
 	//key type key#value
 	buf := buffers.Get()
@@ -126,7 +126,7 @@ func buildIndex(labels []*prompb.Label, samples []*prompb.Sample) string {
 	return labelID
 }
 
-func writeTimeseriesData(labelID string, samples []*prompb.Sample) {
+func writeTimeseriesData(labelID string, samples []prompb.Sample) {
 	buf := buffers.Get()
 	defer buf.Free()
 	for _, v := range samples {

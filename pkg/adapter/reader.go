@@ -3,10 +3,10 @@ package adapter
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/bragfoo/TiPrometheus/src/lib"
-	"github.com/bragfoo/TiPrometheus/src/modules/conf"
-	"github.com/bragfoo/TiPrometheus/src/modules/prompb"
-	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
+	"github.com/bragfoo/TiPrometheus/pkg/lib"
+	"github.com/bragfoo/TiPrometheus/pkg/conf"
+	"github.com/prometheus/prometheus/prompb"
+	"github.com/bragfoo/TiPrometheus/pkg/tikv"
 	"go.uber.org/zap/buffer"
 	"log"
 	"math"
@@ -190,8 +190,8 @@ func getTimeList(md string, tiemEndpointList []int64) string {
 	return timeList
 }
 
-func getValues(timeList []string, md string) []*prompb.Sample {
-	var values []*prompb.Sample
+func getValues(timeList []string, md string) []prompb.Sample {
+	var values []prompb.Sample
 
 	bvChan := make(chan prompb.Sample, 1000)
 
@@ -206,7 +206,7 @@ func getValues(timeList []string, md string) []*prompb.Sample {
 	for {
 		baseValue := <-bvChan
 		bvNum = bvNum + 1
-		values = append(values, &baseValue)
+		values = append(values, baseValue)
 		if bvNum == len(timeList) {
 			close(bvChan)
 			break

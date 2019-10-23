@@ -2,9 +2,9 @@ package process
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/bragfoo/TiPrometheus/src/lib"
-	"github.com/bragfoo/TiPrometheus/src/modules/conf"
-	"github.com/bragfoo/TiPrometheus/src/modules/tikv"
+	"github.com/bragfoo/TiPrometheus/pkg/lib"
+	"github.com/bragfoo/TiPrometheus/pkg/conf"
+	"github.com/bragfoo/TiPrometheus/pkg/tikv"
 	"log"
 )
 
