@@ -1,14 +1,18 @@
 package conf
 
-// AgentConf is agent conf
+// AgentConf is the agent configuration type.
 type AgentConf struct {
 	PDHost       string
 	TimeInterval int
 	AdapterListen string
 }
 
-// RunTimeInfo is run time info
+// RunTimeInfo contains the active configuration.
 var RunTimeInfo AgentConf
 
-// RunTimeMap is run time info map
+// RunTimeMap contains the full configuration file.
 var RunTimeMap map[string]AgentConf
+
+// DefaultRunTimeName specifies the name of the default TOML section
+// to be loaded when nothing is configured.
+const DefaultRunTimeName = "default"

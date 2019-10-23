@@ -8,12 +8,17 @@ import (
 	"log"
 )
 
-// Init is init data
+// Init loads the configuration file and initializes
+// logging and other subsystems.
 func Init(runTime, confPath string) {
-	// init runtime
+	// load the config file
 	if _, err := toml.DecodeFile(confPath, &conf.RunTimeMap); err != nil {
 		log.Println(err)
 		return
+	}
+	// fall back to the default config section when unspecified
+	if runTime == "" {
+		runTime = conf.DefaultRunTimeName
 	}
 	conf.RunTimeInfo = conf.RunTimeMap[runTime]
 	log.Println(conf.RunTimeInfo)

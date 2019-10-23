@@ -3,7 +3,7 @@
     PDHost = "ip:port"
     TimeInterval = 5
 
-[pro]
+[default]
     AdapterListen = ":12350"
     PDHost = "ip:port"
     TimeInterval = 5
