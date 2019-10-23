@@ -1,7 +1,9 @@
 [dev]
+    AdapterListen = "127.0.0.1:12350"
     PDHost = "ip:port"
     TimeInterval = 5
 
 [pro]
+    AdapterListen = ":12350"
     PDHost = "ip:port"
     TimeInterval = 5

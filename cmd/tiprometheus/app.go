@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/bragfoo/TiPrometheus/pkg/process"
+	"github.com/bragfoo/TiPrometheus/pkg/conf"
 	"github.com/bragfoo/TiPrometheus/pkg/simpleHTTP"
 	"os"
 )
@@ -15,6 +16,6 @@ func main() {
 	flag.Parse()
 	// init
 	process.Init(os.Getenv("RunTime"), *confPath)
-	// http server
-	simpleHTTP.Server()
+		// start http server
+		simpleHTTP.Server(conf.RunTimeInfo.AdapterListen)
 }

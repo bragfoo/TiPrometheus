@@ -4,6 +4,7 @@ package conf
 type AgentConf struct {
 	PDHost       string
 	TimeInterval int
+	AdapterListen string
 }
 
 // RunTimeInfo is run time info
