@@ -24,6 +24,10 @@ func Init(runTime, confPath string) {
 	log.Println(conf.RunTimeInfo)
 	// init log
 	lib.InitLog()
-	// init tikv
-	tikv.Init()
+	// init tikv client lib
+	if conf.RunTimeInfo.TiKVEnableTLS {
+		tikv.Init([]string{conf.RunTimeInfo.PDHost}, conf.RunTimeInfo.TiKVCACertificate, conf.RunTimeInfo.TiKVClientCertificate, conf.RunTimeInfo.TiKVClientKey)
+	} else {
+		tikv.Init([]string{conf.RunTimeInfo.PDHost}, "", "", "")
+	}
 }

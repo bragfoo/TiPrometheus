@@ -3,6 +3,7 @@
     PDHost = "ip:port"
     TimeInterval = 5
     AdapterEnableTLS = false
+    TiKVEnableTLS = false
 
 [default]
     AdapterListen = ":12350"
@@ -12,3 +13,7 @@
     AdapterCACertificate = "/path/to/certs/ca.pem"
     AdapterServerCertificate = "/path/to/certs/adapter.pem"
     AdapterServerKey = "/path/to/certs/adapter.key"
+    TiKVEnableTLS = true
+    TiKVCACertificate = "/path/to/certs/ca.pem"
+    TiKVClientCertificate = "/path/to/certs/client.pem"
+    TiKVClientKey = "/path/to/certs/client.key"

@@ -9,6 +9,10 @@ type AgentConf struct {
 	AdapterCACertificate string
 	AdapterServerCertificate string
 	AdapterServerKey string
+	TiKVEnableTLS bool
+	TiKVCACertificate string
+	TiKVClientCertificate string
+	TiKVClientKey string
 }
 
 // RunTimeInfo contains the active configuration.
