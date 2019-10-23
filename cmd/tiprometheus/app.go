@@ -16,6 +16,11 @@ func main() {
 	flag.Parse()
 	// init
 	process.Init(os.Getenv("RunTime"), *confPath)
+	if conf.RunTimeInfo.AdapterEnableTLS {
+		// start https server
+		simpleHTTP.ServerTLS(conf.RunTimeInfo.AdapterListen, conf.RunTimeInfo.AdapterCACertificate, conf.RunTimeInfo.AdapterServerCertificate, conf.RunTimeInfo.AdapterServerKey)
+	} else {
 		// start http server
 		simpleHTTP.Server(conf.RunTimeInfo.AdapterListen)
+	}
 }

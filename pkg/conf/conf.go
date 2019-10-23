@@ -5,6 +5,10 @@ type AgentConf struct {
 	PDHost       string
 	TimeInterval int
 	AdapterListen string
+	AdapterEnableTLS bool
+	AdapterCACertificate string
+	AdapterServerCertificate string
+	AdapterServerKey string
 }
 
 // RunTimeInfo contains the active configuration.
