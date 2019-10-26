@@ -1,7 +1,0 @@
-[dev]
-    PDHost = "ip:port"
-    TimeInterval = 5
-
-[pro]
-    PDHost = "ip:port"
-    TimeInterval = 5

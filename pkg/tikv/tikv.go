@@ -1,7 +1,6 @@
 package tikv
 
 import (
-	"github.com/bragfoo/TiPrometheus/src/modules/conf"
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/store/tikv"
 	"log"
@@ -14,10 +13,21 @@ type kv struct {
 
 var Client *tikv.RawKVClient
 
-// InitStore
-func Init() {
+// Init initializes the global TiKV client connection.
+//
+// Multiple PD servers can be specified to support automatic failover.
+//
+// caCertFile, certFile and keyFile are required when the TiKV/PD cluster is TLS enabled.
+// A regular unencrypted connection is created if they are empty.
+func Init(pdhosts []string, caCertFile string, certFile string, keyFile string) {
+	// set up TLS config
+	security := config.Security{
+		ClusterSSLCA:   caCertFile,
+		ClusterSSLCert: certFile,
+		ClusterSSLKey:  keyFile,
+	}
 	var err error
-	Client, err = tikv.NewRawKVClient([]string{conf.RunTimeInfo.PDHost}, config.Security{})
+	Client, err = tikv.NewRawKVClient(pdhosts, security)
 	if err != nil {
 		log.Println(err)
 	}

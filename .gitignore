@@ -110,4 +110,9 @@ fabric.properties
 .idea/httpRequests
 
 # Config file
-src/conf/conf.toml
+/conf.toml
+
+# Built applications
+/app
+/tiprometheus
+/metricstest
