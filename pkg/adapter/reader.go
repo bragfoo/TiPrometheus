@@ -64,7 +64,7 @@ func getTiemEndpointList(startTimeCompute, endTimeCompute, interval int64) []int
 	tiemEndpointList = append(tiemEndpointList, int64(startTimeCompute))
 	tiemEndpoint := startTimeCompute
 	for {
-		tiemEndpoint = tiemEndpoint + 300000
+		tiemEndpoint = tiemEndpoint + interval
 		tiemEndpointList = append(tiemEndpointList, int64(tiemEndpoint))
 		if tiemEndpoint == endTimeCompute {
 			break
