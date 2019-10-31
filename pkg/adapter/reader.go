@@ -26,10 +26,10 @@ func RemoteReader(querys prompb.ReadRequest) *prompb.ReadResponse {
 	log.Println("Query:", startTime, endTime, matchers)
 
 	//compute time endpoint
-	tiemEndpoinFromGet := getTimeEndpoint(startTime, endTime)
+	timeEndpoinFromGet := getTimeEndpoint(startTime, endTime)
 
 	//get data by matchers
-	docTimeseries := getSameMatcher(matchers, tiemEndpoinFromGet)
+	docTimeseries := getSameMatcher(matchers, timeEndpoinFromGet)
 
 	//response
 	var queryResult prompb.QueryResult
@@ -48,33 +48,33 @@ func getTimeEndpoint(startTime, endTime int64) []int64 {
 	endTimeCompute := (math.Floor(float64(endTime) / interval)) * interval
 	//log.Println("Time compute:", int64(startTimeCompute), int64(endTimeCompute))
 
-	//get tiemEndpointList
-	tiemEndpointList := getTiemEndpointList(int64(startTimeCompute), int64(endTimeCompute), int64(interval))
+	//get timeEndpointList
+	timeEndpointList := getTimeEndpointList(int64(startTimeCompute), int64(endTimeCompute), int64(interval))
 
-	return tiemEndpointList
+	return timeEndpointList
 }
 
-func getTiemEndpointList(startTimeCompute, endTimeCompute, interval int64) []int64 {
-	var tiemEndpointList []int64
+func getTimeEndpointList(startTimeCompute, endTimeCompute, interval int64) []int64 {
+	var timeEndpointList []int64
 	//in one time interval
 	if startTimeCompute == endTimeCompute {
 		endTimeCompute = startTimeCompute + interval
 	}
 	//in time intervals
-	tiemEndpointList = append(tiemEndpointList, int64(startTimeCompute))
-	tiemEndpoint := startTimeCompute
+	timeEndpointList = append(timeEndpointList, int64(startTimeCompute))
+	timeEndpoint := startTimeCompute
 	for {
-		tiemEndpoint = tiemEndpoint + 300000
-		tiemEndpointList = append(tiemEndpointList, int64(tiemEndpoint))
-		if tiemEndpoint == endTimeCompute {
+		timeEndpoint = timeEndpoint + 300000
+		timeEndpointList = append(timeEndpointList, int64(timeEndpoint))
+		if timeEndpoint == endTimeCompute {
 			break
 		}
 	}
-	//log.Println("Time endpoint list:", tiemEndpointList)
-	return tiemEndpointList
+	//log.Println("Time endpoint list:", timeEndpointList)
+	return timeEndpointList
 }
 
-func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) []*prompb.TimeSeries {
+func getSameMatcher(matchers []*prompb.LabelMatcher, timeEndpointList []int64) []*prompb.TimeSeries {
 	buf := pool.Get()
 	defer buf.Free()
 
@@ -99,7 +99,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, tiemEndpointList []int64) [
 			labels := makeLabels([]byte(labelInfoKV.Value))
 
 			//get timeseries list
-			timeListString := getTimeList(md, tiemEndpointList)
+			timeListString := getTimeList(md, timeEndpointList)
 			timeList := lib.ReadStringByStepwidth(13, timeListString)
 
 			//get values
@@ -162,13 +162,13 @@ func makeLabels(labelInfoByte []byte) []*prompb.Label {
 	return labels
 }
 
-func getTimeList(md string, tiemEndpointList []int64) string {
+func getTimeList(md string, timeEndpointList []int64) string {
 	buf := pool.Get()
 	defer buf.Free()
 
 	var timeList string
 	//key type index:timeseries:5d4decf2a1d0dd0151cd893cfc752af4:1543639500000
-	for _, oneTimeEndpoint := range tiemEndpointList {
+	for _, oneTimeEndpoint := range timeEndpointList {
 		buf.AppendString("index:timeseries:")
 		buf.AppendString(md)
 		buf.AppendString(":")
