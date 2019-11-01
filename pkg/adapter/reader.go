@@ -64,7 +64,8 @@ func getTimeEndpointList(startTimeCompute, endTimeCompute, interval int64) []int
 	timeEndpointList = append(timeEndpointList, int64(startTimeCompute))
 	timeEndpoint := startTimeCompute
 	for {
-		timeEndpoint = timeEndpoint + 300000
+    use-interval-instead-of-hardcoded-value -- Incoming Change
+		timeEndpoint = timeEndpoint + interval
 		timeEndpointList = append(timeEndpointList, int64(timeEndpoint))
 		if timeEndpoint == endTimeCompute {
 			break
