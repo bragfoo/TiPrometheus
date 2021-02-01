@@ -2,17 +2,17 @@ package conf
 
 // AgentConf is the agent configuration type.
 type AgentConf struct {
-	PDHost       string
-	TimeInterval int
-	AdapterListen string
-	AdapterEnableTLS bool
-	AdapterCACertificate string
+	PDHost                   string
+	TimeInterval             int
+	AdapterListen            string
+	AdapterEnableTLS         bool
+	AdapterCACertificate     string
 	AdapterServerCertificate string
-	AdapterServerKey string
-	TiKVEnableTLS bool
-	TiKVCACertificate string
-	TiKVClientCertificate string
-	TiKVClientKey string
+	AdapterServerKey         string
+	TiKVEnableTLS            bool
+	TiKVCACertificate        string
+	TiKVClientCertificate    string
+	TiKVClientKey            string
 }
 
 // RunTimeInfo contains the active configuration.

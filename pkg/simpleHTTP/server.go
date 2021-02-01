@@ -1,11 +1,11 @@
 package simpleHTTP
 
 import (
-	"net/http"
-	"log"
-	"io/ioutil"
-	"crypto/x509"
 	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
+	"log"
+	"net/http"
 )
 
 const defaultHTTPEndpoint = ":12350"
@@ -50,7 +50,7 @@ func ServerTLS(endpoint string, caCertFile string, certFile string, keyFile stri
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
 		tlsConfig := &tls.Config{
-			ClientCAs: caCertPool,
+			ClientCAs:  caCertPool,
 			ClientAuth: tls.RequireAndVerifyClientCert,
 		}
 		tlsConfig.BuildNameToCertificate()

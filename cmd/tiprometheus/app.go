@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/bragfoo/TiPrometheus/pkg/process"
-	"github.com/bragfoo/TiPrometheus/pkg/conf"
-	"github.com/bragfoo/TiPrometheus/pkg/simpleHTTP"
 	"os"
+
+	"github.com/bragfoo/TiPrometheus/pkg/conf"
+	"github.com/bragfoo/TiPrometheus/pkg/process"
+	"github.com/bragfoo/TiPrometheus/pkg/simpleHTTP"
 )
 
 // RunTime=dev go run app.go -conf "./conf.toml"
