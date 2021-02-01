@@ -3,14 +3,15 @@ package adapter
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
+	"math"
+	"strconv"
+
 	"github.com/bragfoo/TiPrometheus/pkg/conf"
 	"github.com/bragfoo/TiPrometheus/pkg/lib"
 	"github.com/bragfoo/TiPrometheus/pkg/tikv"
 	"github.com/prometheus/prometheus/prompb"
 	"go.uber.org/zap/buffer"
-	"log"
-	"math"
-	"strconv"
 )
 
 var (
@@ -64,7 +65,7 @@ func getTimeEndpointList(startTimeCompute, endTimeCompute, interval int64) []int
 	timeEndpointList = append(timeEndpointList, int64(startTimeCompute))
 	timeEndpoint := startTimeCompute
 	for {
-    use-interval-instead-of-hardcoded-value -- Incoming Change
+		// TODO: use-interval-instead-of-hardcoded-value -- Incoming Change
 		timeEndpoint = timeEndpoint + interval
 		timeEndpointList = append(timeEndpointList, int64(timeEndpoint))
 		if timeEndpoint == endTimeCompute {
