@@ -77,7 +77,11 @@ func Delall(startKey []byte, limit int) error {
 		return err
 	}
 	for i := 0; i < len(keys); i += 1 {
-		Dels(keys[i])
+		// TODO: handle multi error
+		err = Dels(keys[i])
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

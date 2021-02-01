@@ -14,6 +14,7 @@
 package main
 
 import (
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -59,5 +60,6 @@ func recordMetrics() {
 func main() {
 	recordMetrics()
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2330", nil)
+	err := http.ListenAndServe(":2330", nil)
+	log.Fatal(err)
 }

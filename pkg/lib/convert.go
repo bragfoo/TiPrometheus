@@ -28,11 +28,11 @@ var (
 	buffers = buffer.NewPool()
 )
 
-func GetBytes(key interface{}) []byte {
+func GetBytes(key interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	enc.Encode(key)
-	return buf.Bytes()
+	err := enc.Encode(key)
+	return buf.Bytes(), err
 }
 
 func Int64ToBytes(i int64) []byte {
@@ -42,14 +42,22 @@ func Int64ToBytes(i int64) []byte {
 func Int64WriteBytes(i int64) []byte {
 	buf := buffers.Get()
 	defer buf.Free()
-	binary.Write(buf, binary.BigEndian, i)
+	// TODO: need handle error
+	err := binary.Write(buf, binary.BigEndian, i)
+	if err != nil {
+		return []byte{}
+	}
 	b := buf.Bytes()
 	return b
 }
 
 func MakeMDByByte(initByte []byte) string {
 	m := md5.New()
-	m.Write(initByte)
+	// TODO: need handle error
+	_, err := m.Write(initByte)
+	if err != nil {
+		return ""
+	}
 	md := m.Sum(nil)
 	mdString := hex.EncodeToString(md)
 	return mdString

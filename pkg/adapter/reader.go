@@ -111,7 +111,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, timeEndpointList []int64) [
 			buf.Reset()
 
 			//get labels
-			labels := makeLabels([]byte(labelInfoKV.Value))
+			labels, _ := makeLabels([]byte(labelInfoKV.Value))
 
 			//get timeseries list
 			timeListString := getTimeList(md, timeEndpointList)
@@ -165,16 +165,19 @@ func getCountMap(matchers []*prompb.LabelMatcher) map[string]int {
 	return countMap
 }
 
-func makeLabels(labelInfoByte []byte) []*prompb.Label {
+func makeLabels(labelInfoByte []byte) ([]*prompb.Label, error) {
 	var labels []*prompb.Label
 	var buf bytes.Buffer
 	// wtire to buffer
 	buf.Write(labelInfoByte)
 	dec := gob.NewDecoder(&buf)
 	// read from buffer
-	dec.Decode(&labels)
+	err := dec.Decode(&labels)
+	if err != nil {
+		return nil, err
+	}
 	//log.Println("Labels:", labels)
-	return labels
+	return labels, nil
 }
 
 func getTimeList(md string, timeEndpointList []int64) string {

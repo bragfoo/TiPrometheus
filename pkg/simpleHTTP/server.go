@@ -16,6 +16,7 @@ package simpleHTTP
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -77,9 +78,17 @@ func ServerTLS(endpoint string, caCertFile string, certFile string, keyFile stri
 	// check if HTTPS is requested
 	if certFile == "" || keyFile == "" {
 		// simple HTTP
-		server.ListenAndServe()
+		// TODO: need handle error
+		err := server.ListenAndServe()
+		if err != nil {
+			fmt.Println(err)
+		}
 	} else {
 		// HTTPS
-		server.ListenAndServeTLS(certFile, keyFile)
+		// TODO: need handle error
+		err := server.ListenAndServeTLS(certFile, keyFile)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
