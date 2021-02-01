@@ -17,7 +17,10 @@ include Makefile.common
 docker: npm_licenses common-docker
 
 .PHONY: build
-build: assets common-build
+build:
+	@echo ">> building binaries"
+	$(GO) build -o tiprometheus cmd/tiprometheus/app.go
+
 
 .PHONY: bench_tsdb
 bench_tsdb: $(PROMU)
