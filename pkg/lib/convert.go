@@ -1,3 +1,16 @@
+// Copyright 2021 The TiPrometheus Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package lib
 
 import (
@@ -6,19 +19,20 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
-	"go.uber.org/zap/buffer"
 	"strconv"
+
+	"go.uber.org/zap/buffer"
 )
 
 var (
 	buffers = buffer.NewPool()
 )
 
-func GetBytes(key interface{}) []byte {
+func GetBytes(key interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	enc.Encode(key)
-	return buf.Bytes()
+	err := enc.Encode(key)
+	return buf.Bytes(), err
 }
 
 func Int64ToBytes(i int64) []byte {
@@ -28,14 +42,22 @@ func Int64ToBytes(i int64) []byte {
 func Int64WriteBytes(i int64) []byte {
 	buf := buffers.Get()
 	defer buf.Free()
-	binary.Write(buf, binary.BigEndian, i)
+	// TODO: need handle error
+	err := binary.Write(buf, binary.BigEndian, i)
+	if err != nil {
+		return []byte{}
+	}
 	b := buf.Bytes()
 	return b
 }
 
 func MakeMDByByte(initByte []byte) string {
 	m := md5.New()
-	m.Write(initByte)
+	// TODO: need handle error
+	_, err := m.Write(initByte)
+	if err != nil {
+		return ""
+	}
 	md := m.Sum(nil)
 	mdString := hex.EncodeToString(md)
 	return mdString

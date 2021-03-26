@@ -1,16 +1,31 @@
+// Copyright 2021 The TiPrometheus Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package adapter
 
 import (
-	"github.com/bragfoo/TiPrometheus/pkg/conf"
-	"github.com/bragfoo/TiPrometheus/pkg/lib"
 	"log"
 	"strconv"
 
+	"github.com/bragfoo/TiPrometheus/pkg/conf"
+	"github.com/bragfoo/TiPrometheus/pkg/lib"
+
 	"bytes"
+	"time"
+
 	"github.com/bragfoo/TiPrometheus/pkg/tikv"
 	"github.com/prometheus/prometheus/prompb"
 	"go.uber.org/zap/buffer"
-	"time"
 )
 
 var (
@@ -30,7 +45,8 @@ func RemoteWriter(data prompb.WriteRequest) {
 		//write timeseries data
 		writeTimeseriesData(labelID, samples)
 
-		labelsByte := lib.GetBytes(labels)
+		// TODO: need handle error
+		labelsByte, _ := lib.GetBytes(labels)
 		SaveOriDoc(labelID, labelsByte)
 	}
 }
@@ -76,17 +92,35 @@ func buildIndex(labels []*prompb.Label, samples []prompb.Sample) string {
 
 		//not in index
 		if "" == indexStatusKey.Value {
-			tikv.Puts([]byte(indexStatus), []byte("1"))
+			// TODO: need handle error
+			err := tikv.Puts([]byte(indexStatus), []byte("1"))
+			if err != nil {
+				log.Print(err)
+			}
 
 			//wtire tikv
-			oldKey, _ := tikv.Get([]byte(key))
+			// TODO: need handle error
+			oldKey, err := tikv.Get([]byte(key))
+			if err != nil {
+				log.Print(err)
+			}
+
 			if oldKey.Value == "" {
-				tikv.Puts([]byte(key), []byte(labelID))
+				// TODO: need handle error
+				err := tikv.Puts([]byte(key), []byte(labelID))
+				if err != nil {
+					log.Print(err)
+				}
 			} else {
 				b := bytes.NewBufferString(oldKey.Value)
 				b.WriteString(labelID)
 				v := b.Bytes()
-				tikv.Puts([]byte(key), v)
+
+				// TODO: need handle error
+				err := tikv.Puts([]byte(key), v)
+				if err != nil {
+					log.Print(err)
+				}
 			}
 		}
 
@@ -112,13 +146,21 @@ func buildIndex(labels []*prompb.Label, samples []prompb.Sample) string {
 		oldKey, _ := tikv.Get(timeIndexBytes)
 		//log.Println("Timeseries indexStatus:", oldKey)
 		if oldKey.Value == "" {
-			tikv.Puts(timeIndexBytes, lib.Int64ToBytes(v.Timestamp))
+			// TODO: need handle error
+			err := tikv.Puts(timeIndexBytes, lib.Int64ToBytes(v.Timestamp))
+			if err != nil {
+				log.Print(err)
+			}
 		} else {
 			bs := buffers.Get()
 			bs.AppendString(oldKey.Value)
 			bs.AppendString(strconv.FormatInt(v.Timestamp, 10))
 			v := bs.Bytes()
-			tikv.Puts(timeIndexBytes, v)
+			// TODO: need handle error
+			err := tikv.Puts(timeIndexBytes, v)
+			if err != nil {
+				log.Print(err)
+			}
 			bs.Free()
 		}
 	}
@@ -138,7 +180,11 @@ func writeTimeseriesData(labelID string, samples []prompb.Sample) {
 		key := buf.Bytes()
 
 		//write to tikv
-		tikv.Puts(key, []byte(strconv.FormatFloat(v.Value, 'E', -1, 64)))
+		// TODO: need handle error
+		err := tikv.Puts(key, []byte(strconv.FormatFloat(v.Value, 'E', -1, 64)))
+		if err != nil {
+			log.Print(err)
+		}
 		//log.Println("Write timeseries:", string(key), strconv.FormatFloat(v.Value, 'E', -1, 64))
 		buf.Reset()
 	}
@@ -150,6 +196,10 @@ func SaveOriDoc(labelID string, originalMsg []byte) {
 	buf.AppendString("doc:")
 	buf.AppendString(labelID)
 	key := buf.Bytes()
-	tikv.Puts(key, originalMsg)
+	// TODO: need handle error
+	err := tikv.Puts(key, originalMsg)
+	if err != nil {
+		log.Print(err)
+	}
 	//log.Println("Write meta:", string(key), string(originalMsg))
 }

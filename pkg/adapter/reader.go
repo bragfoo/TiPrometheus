@@ -1,16 +1,30 @@
+// Copyright 2021 The TiPrometheus Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package adapter
 
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
+	"math"
+	"strconv"
+
 	"github.com/bragfoo/TiPrometheus/pkg/conf"
 	"github.com/bragfoo/TiPrometheus/pkg/lib"
 	"github.com/bragfoo/TiPrometheus/pkg/tikv"
 	"github.com/prometheus/prometheus/prompb"
 	"go.uber.org/zap/buffer"
-	"log"
-	"math"
-	"strconv"
 )
 
 var (
@@ -64,7 +78,7 @@ func getTimeEndpointList(startTimeCompute, endTimeCompute, interval int64) []int
 	timeEndpointList = append(timeEndpointList, int64(startTimeCompute))
 	timeEndpoint := startTimeCompute
 	for {
-    use-interval-instead-of-hardcoded-value -- Incoming Change
+		// TODO: use-interval-instead-of-hardcoded-value -- Incoming Change
 		timeEndpoint = timeEndpoint + interval
 		timeEndpointList = append(timeEndpointList, int64(timeEndpoint))
 		if timeEndpoint == endTimeCompute {
@@ -97,7 +111,7 @@ func getSameMatcher(matchers []*prompb.LabelMatcher, timeEndpointList []int64) [
 			buf.Reset()
 
 			//get labels
-			labels := makeLabels([]byte(labelInfoKV.Value))
+			labels, _ := makeLabels([]byte(labelInfoKV.Value))
 
 			//get timeseries list
 			timeListString := getTimeList(md, timeEndpointList)
@@ -151,16 +165,19 @@ func getCountMap(matchers []*prompb.LabelMatcher) map[string]int {
 	return countMap
 }
 
-func makeLabels(labelInfoByte []byte) []*prompb.Label {
+func makeLabels(labelInfoByte []byte) ([]*prompb.Label, error) {
 	var labels []*prompb.Label
 	var buf bytes.Buffer
 	// wtire to buffer
 	buf.Write(labelInfoByte)
 	dec := gob.NewDecoder(&buf)
 	// read from buffer
-	dec.Decode(&labels)
+	err := dec.Decode(&labels)
+	if err != nil {
+		return nil, err
+	}
 	//log.Println("Labels:", labels)
-	return labels
+	return labels, nil
 }
 
 func getTimeList(md string, timeEndpointList []int64) string {
