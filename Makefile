@@ -10,26 +10,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Needs to be defined before including Makefile.common to auto-generate targets
+DOCKER_ARCHS ?= amd64 armv7 arm64 ppc64le s390x
+
+
+GOLANGCI_LINT_OPTS ?= --timeout 2m
 
 include Makefile.common
 
+
+DOCKER_IMAGE_NAME       ?= tiprometheus
+
+
+.PHONY: test
+test: common-test
+
 .PHONY: docker
-docker: npm_licenses common-docker
+docker: common-docker
 
 .PHONY: build
-build:
+build: common-all
 	@echo ">> building binaries"
 	$(GO) build -o tiprometheus cmd/tiprometheus/app.go
-
-
-.PHONY: bench_tsdb
-bench_tsdb: $(PROMU)
-	@echo ">> building promtool"
-	@GO111MODULE=$(GO111MODULE) $(PROMU) build --prefix $(PREFIX) promtool
-	@echo ">> running benchmark, writing result to $(TSDB_BENCHMARK_OUTPUT_DIR)"
-	@$(PROMTOOL) tsdb bench write --metrics=$(TSDB_BENCHMARK_NUM_METRICS) --out=$(TSDB_BENCHMARK_OUTPUT_DIR) $(TSDB_BENCHMARK_DATASET)
-	@$(GO) tool pprof -svg $(PROMTOOL) $(TSDB_BENCHMARK_OUTPUT_DIR)/cpu.prof > $(TSDB_BENCHMARK_OUTPUT_DIR)/cpuprof.svg
-	@$(GO) tool pprof --inuse_space -svg $(PROMTOOL) $(TSDB_BENCHMARK_OUTPUT_DIR)/mem.prof > $(TSDB_BENCHMARK_OUTPUT_DIR)/memprof.inuse.svg
-	@$(GO) tool pprof --alloc_space -svg $(PROMTOOL) $(TSDB_BENCHMARK_OUTPUT_DIR)/mem.prof > $(TSDB_BENCHMARK_OUTPUT_DIR)/memprof.alloc.svg
-	@$(GO) tool pprof -svg $(PROMTOOL) $(TSDB_BENCHMARK_OUTPUT_DIR)/block.prof > $(TSDB_BENCHMARK_OUTPUT_DIR)/blockprof.svg
-	@$(GO) tool pprof -svg $(PROMTOOL) $(TSDB_BENCHMARK_OUTPUT_DIR)/mutex.prof > $(TSDB_BENCHMARK_OUTPUT_DIR)/mutexprof.svg

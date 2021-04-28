@@ -19,9 +19,6 @@
 # 	@echo ">> Running customTarget"
 #
 
-# Ensure GOBIN is not set during build
-unexport GOBIN
-
 GO           ?= go
 GOFMT        ?= $(GO)fmt
 FIRST_GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
@@ -33,29 +30,7 @@ GO_VERSION        ?= $(shell $(GO) version)
 GO_VERSION_NUMBER ?= $(word 3, $(GO_VERSION))
 PRE_GO_111        ?= $(shell echo $(GO_VERSION_NUMBER) | grep -E 'go1\.(10|[0-9])\.')
 
-GOVENDOR :=
-GO111MODULE :=
-ifeq (, $(PRE_GO_111))
-	ifneq (,$(wildcard go.mod))
-		# Enforce Go modules support just in case the directory is inside GOPATH (and for Travis CI).
-		GO111MODULE := on
-
-		ifneq (,$(wildcard vendor))
-			# Always use the local vendor/ directory to satisfy the dependencies.
-			GOOPTS := $(GOOPTS) -mod=vendor
-		endif
-	endif
-else
-	ifneq (,$(wildcard go.mod))
-		ifneq (,$(wildcard vendor))
-$(warning This repository requires Go >= 1.11 because of Go modules)
-$(warning Some recipes may not work as expected as the current Go runtime is '$(GO_VERSION_NUMBER)')
-		endif
-	else
-		# This repository isn't using Go modules (yet).
-		GOVENDOR := $(FIRST_GOPATH)/bin/govendor
-	endif
-endif
+GO111MODULE := on
 pkgs          = ./...
 
 ifeq (arm, $(GOHOSTARCH))
@@ -76,7 +51,7 @@ endif
 
 GOLANGCI_LINT :=
 GOLANGCI_LINT_OPTS ?=
-GOLANGCI_LINT_VERSION ?= v1.18.0
+GOLANGCI_LINT_VERSION ?= v1.39.0
 # golangci-lint only supports linux, darwin and windows platforms on i386/amd64.
 # windows isn't included here because of the path separator being different.
 ifeq ($(GOHOSTOS),$(filter $(GOHOSTOS),linux darwin))
@@ -90,7 +65,7 @@ BIN_DIR                 ?= $(shell pwd)
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 DOCKERFILE_PATH         ?= ./Dockerfile
 DOCKERBUILD_CONTEXT     ?= ./
-DOCKER_REPO             ?= ./bragfoo 
+DOCKER_REPO             ?= bragfoo
 
 DOCKER_ARCHS            ?= amd64
 
@@ -137,11 +112,7 @@ common-check_license:
 .PHONY: common-deps
 common-deps:
 	@echo ">> getting dependencies"
-ifdef GO111MODULE
 	GO111MODULE=$(GO111MODULE) $(GO) mod download
-else
-	$(GO) get $(GOOPTS) -t ./...
-endif
 
 .PHONY: update-go-deps
 update-go-deps:
@@ -240,23 +211,12 @@ common-docker-manifest:
 	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create -a "$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" $(foreach ARCH,$(DOCKER_ARCHS),$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME)-linux-$(ARCH):$(DOCKER_IMAGE_TAG))
 	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push "$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
 
-.PHONY: proto
-proto:
-	@echo ">> generating code from proto files"
-	@./scripts/genproto.sh
-
 ifdef GOLANGCI_LINT
 $(GOLANGCI_LINT):
 	mkdir -p $(FIRST_GOPATH)/bin
 	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/$(GOLANGCI_LINT_VERSION)/install.sh \
 		| sed -e '/install -d/d' \
 		| sh -s -- -b $(FIRST_GOPATH)/bin $(GOLANGCI_LINT_VERSION)
-endif
-
-ifdef GOVENDOR
-.PHONY: $(GOVENDOR)
-$(GOVENDOR):
-	GOOS= GOARCH= $(GO) get -u github.com/kardianos/govendor
 endif
 
 .PHONY: precheck

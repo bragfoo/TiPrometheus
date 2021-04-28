@@ -16,8 +16,8 @@ package tikv
 import (
 	"log"
 
-	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/store/tikv"
+	"github.com/pingcap/tidb/store/tikv/config"
 )
 
 type kv struct {
@@ -35,6 +35,7 @@ var Client *tikv.RawKVClient
 // A regular unencrypted connection is created if they are empty.
 func Init(pdhosts []string, caCertFile string, certFile string, keyFile string) {
 	// set up TLS config
+
 	security := config.Security{
 		ClusterSSLCA:   caCertFile,
 		ClusterSSLCert: certFile,
@@ -72,7 +73,7 @@ func Dels(keys ...[]byte) error {
 
 // Delall
 func Delall(startKey []byte, limit int) error {
-	keys, _, err := Client.Scan(startKey, limit)
+	keys, _, err := Client.Scan(startKey, nil, limit)
 	if err != nil {
 		return err
 	}
@@ -98,7 +99,7 @@ func Get(k []byte) (kv, error) {
 // Scan
 func Scan(startKey []byte, limit int) ([]kv, error) {
 	var kvs []kv
-	keys, values, err := Client.Scan(startKey, limit)
+	keys, values, err := Client.Scan(startKey, nil, limit)
 	if err != nil {
 		return kvs, err
 	}
