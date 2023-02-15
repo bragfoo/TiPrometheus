@@ -18,18 +18,14 @@ require (
 	github.com/pingcap/tidb v0.0.0-20181221093914-1e06ccc019b8
 	github.com/pingcap/tidb-tools v2.1.2+incompatible // indirect
 	github.com/pingcap/tipb v0.0.0-20181126132056-a7fd2aaa9719 // indirect
-	github.com/prometheus/client_golang v0.9.2
-	github.com/prometheus/common v0.0.0-20181218105931-67670fe90761 // indirect
+	github.com/prometheus/client_golang v1.11.1
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446 // indirect
-	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72 // indirect
 	github.com/twinj/uuid v0.1.0 // indirect
 	github.com/uber/jaeger-lib v1.5.0 // indirect
 	go.uber.org/zap v1.9.1
 	google.golang.org/genproto v0.0.0-20181221175505-bd9b4fb69e2f // indirect
-	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
-	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3 // indirect
 )
 
